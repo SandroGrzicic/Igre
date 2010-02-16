@@ -272,7 +272,6 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 			g.setBackground(BOJA_POZADINA);
 			g.clearRect(0, visina / 10, širina, visina);
 		}
-
 		g.setRenderingHints(renderingHints);
 
 		// sfere

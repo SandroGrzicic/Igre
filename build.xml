@@ -12,7 +12,7 @@
         <jar destfile="seriousSpheresKlijent.jar">
             <manifest>
                 <attribute name="Main-Class" value="org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader"/>
-                <attribute name="Rsrc-Main-Class" value="hr.sandrogrzicic.games.spheres.klijent.KlijentSpheres"/>
+                <attribute name="Rsrc-Main-Class" value="hr.sandrogrzicic.igre.spheres.klijent.KlijentSpheres"/>
                 <attribute name="Class-Path" value="."/>
                 <attribute name="Rsrc-Class-Path" value="./"/>
             </manifest>

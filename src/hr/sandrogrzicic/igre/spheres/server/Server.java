@@ -26,6 +26,7 @@ public final class Server {
 	static final int SERVER_PORT = 7710;
 	static final int SERVER_PORT_MAX = 7750;
 	static final int SERVER_MAX_IGRAČA = 16;
+	private static final TimeUnit KAŠNJENJE_IGRA_TIMEUNIT = TimeUnit.MICROSECONDS;
 
 	private final List<ServerIgrač> igrači = new ArrayList<ServerIgrač>();
 	private final ServerListener serverListener;
@@ -44,7 +45,7 @@ public final class Server {
 		}
 
 		serverIgra = new ServerIgra(this, igrači);
-		Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(serverIgra, 0, KAŠNJENJE_IGRA, TimeUnit.MICROSECONDS);
+		Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(serverIgra, 0, KAŠNJENJE_IGRA, KAŠNJENJE_IGRA_TIMEUNIT);
 
 		Executors.newSingleThreadExecutor().execute(serverListener);
 
