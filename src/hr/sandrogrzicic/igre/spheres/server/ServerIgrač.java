@@ -164,6 +164,11 @@ class ServerIgrač extends Thread {
 		primanje.start();
 		slanjeRijetko.start();
 		slanjeČesto.start();
+
+		if (!server.isIgraPokrenuta()) {
+			server.setIgraPokrenuta(true);
+		}
+
 	}
 
 	/** Inicijalizacija "veze" sa klijentom. */

@@ -46,7 +46,7 @@ class ServerIgračPrimanje extends Thread {
 		final Akcije akcija = Akcije.get(in.readByte());
 		switch (akcija) {
 		case POMAK_SFERE:
-			sfera.set(in.readFloat(), in.readFloat(), in.readFloat(), in.readBoolean());
+			sfera.set(in.readFloat(), in.readFloat(), in.readBoolean());
 			break;
 		case CHAT_PORUKA:
 			final String poruka = in.readUTF();

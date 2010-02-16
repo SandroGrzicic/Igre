@@ -14,10 +14,10 @@ import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -53,7 +53,7 @@ public abstract class Klijent {
 		this.adresaServera = new InetSocketAddress("sworm.no-ip.com", 7710);
 		this.udp = new UDP(PAKET_MAX_VELIČINA);
 		this.igrač = new Igrač();
-		this.igrači = new HashMap<Integer, Igrač>();
+		this.igrači = new ConcurrentHashMap<Integer, Igrač>(16, 0.5f, 1);
 		this.postavke = new EnumMap<Postavke, Object>(Postavke.class);
 		this.prikazi = new HashSet<Prikaz>();
 	}
@@ -75,10 +75,7 @@ public abstract class Klijent {
 	}
 
 	/**
-	 * Obavlja spajanje na server.
-	 * 
-	 * @throws IOException
-	 *             ukoliko spajanje ne uspije.
+	 * Spajanje na server.
 	 */
 	protected void initConnection() throws IOException {
 		// inicijalni socket za spajanje na server (listen port)
@@ -175,7 +172,6 @@ public abstract class Klijent {
 	public Map<Integer, Igrač> getIgrači() {
 		return igrači;
 	}
-
 
 	public void ugasiIgru() {
 		try {

@@ -18,15 +18,16 @@ import java.util.concurrent.TimeUnit;
  * @author Sandro Gržičić
  */
 public final class Server {
-	public static final int VERZIJA = 18;
+	public static final int VERZIJA = 20;
 	static final long KAŠNJENJE_MREŽA_RIJETKO = 100;
 	static final long KAŠNJENJE_MREŽA_ČESTO = 25;
-	/** TimeUnit.MICROSECONDS */
 	static final long KAŠNJENJE_IGRA = 100;
+	static final TimeUnit KAŠNJENJE_IGRA_TIMEUNIT = TimeUnit.MICROSECONDS;
 	static final int SERVER_PORT = 7710;
 	static final int SERVER_PORT_MAX = 7750;
 	static final int SERVER_MAX_IGRAČA = 16;
-	private static final TimeUnit KAŠNJENJE_IGRA_TIMEUNIT = TimeUnit.MICROSECONDS;
+	/** Maksimalan broj konekcija s jednog IP-a */
+	static final Short MAKSIMALAN_BROJ_KLONOVA = 8;
 
 	private final List<ServerIgrač> igrači = new ArrayList<ServerIgrač>();
 	private final ServerListener serverListener;

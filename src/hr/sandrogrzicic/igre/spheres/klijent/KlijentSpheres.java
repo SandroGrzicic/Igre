@@ -33,7 +33,6 @@ public class KlijentSpheres extends Klijent {
 		sfera = new Sfera();
 		igrač.setSfera(sfera);
 		igraAktivna = true;
-
 	}
 
 	@Override
@@ -50,10 +49,13 @@ public class KlijentSpheres extends Klijent {
 		mrežaSlanje = new MrežaSlanjeSpheres(this, udp);
 		mrežaPrimanje.start();
 		mrežaSlanje.start();
+		igraAktivna(true);
 
 	}
 
-	/** Spajanje na server te izmjena inicijalnih podataka vezanih uz igru. */
+	/**
+	 * Spajanje na server te izmjena inicijalnih podataka vezanih uz igru.
+	 */
 	@Override
 	protected void initConnection() throws IOException {
 		assert (igrač.getIme() != null) : "Ime igrača nije postavljeno!";
@@ -81,21 +83,20 @@ public class KlijentSpheres extends Klijent {
 		radiusMax = in.readDouble();
 		loptica.setR(in.readDouble());
 
-		getIgrači().clear();
+		igrači.clear();
 
 		final int brojIgrača = in.readInt();
 		for (int i = 0; i < brojIgrača; i++) {
-			final int id = in.readInt();
+			final Integer id = new Integer(in.readInt());
 			igrači.put(id, new Igrač(id, new Sfera(new Color(in.readInt()),
 					in.readDouble(), in.readFloat(), in.readFloat(), false), in.readUTF()));
 		}
 
-		getIgrači().put(igrač.getID(), igrač);
+		igrači.put(igrač.getID(), igrač);
 
 		igrač.getSfera().set(in.readFloat(), in.readFloat(), in.readDouble(), false);
 
 		((PrikazSpheres) prikazGlavni).setInit(radiusMax);
-
 	}
 
 
@@ -121,18 +122,14 @@ public class KlijentSpheres extends Klijent {
 		switch (Akcije.get(paket.readByte())) {
 		case IGRAČ_SPOJEN:
 			id = paket.readInt();
-			synchronized (igrači) {
-				igrači.put(id, new Igrač(id, new Sfera(new Color(paket.readInt()),
-						paket.readDouble(), paket.readFloat(), paket.readFloat(), false), paket.readUTF()));
-			}
-			System.err.println("DEBUG: Spojen igrač [" + id + "]! Broj igrača: [" + igrači.size() + "]");
+			igrači.put(id, new Igrač(id, new Sfera(new Color(paket.readInt()),
+					paket.readDouble(), paket.readFloat(), paket.readFloat(), false), paket.readUTF()));
+			// System.err.println("DEBUG: Spojen igrač [" + id + "]! Broj igrača: [" + igrači.size() + "]");
 			break;
 		case IGRAČ_ODSPOJEN:
 			id = paket.readInt();
-			synchronized (igrači) {
-				igrači.remove(id);
-			}
-			System.err.println("DEBUG: Odspojen igrač [" + id + "]! Broj igrača: [" + igrači.size() + "]");
+			igrači.remove(id);
+			// System.err.println("DEBUG: Odspojen igrač [" + id + "]! Broj igrača: [" + igrači.size() + "]");
 			break;
 		}
 	}

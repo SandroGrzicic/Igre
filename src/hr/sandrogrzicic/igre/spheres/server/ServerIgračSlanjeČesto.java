@@ -2,6 +2,7 @@ package hr.sandrogrzicic.igre.spheres.server;
 
 import hr.sandrogrzicic.igre.spheres.Akcije;
 import hr.sandrogrzicic.igre.spheres.objekti.Loptica;
+import hr.sandrogrzicic.igre.spheres.objekti.Sfera;
 import hr.sandrogrzicic.igre.utility.UDP;
 
 import java.io.ByteArrayOutputStream;
@@ -16,6 +17,7 @@ class ServerIgračSlanjeČesto extends Thread {
 	private final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(17);
 	private final DataOutputStream out = new DataOutputStream(outBAOS);
 	private final ServerIgrač igrač;
+	private final Sfera sfera;
 
 	public ServerIgračSlanjeČesto(final ServerIgrač igrač, final UDP udp, final Loptica loptica) {
 		this.setDaemon(true);
@@ -24,6 +26,7 @@ class ServerIgračSlanjeČesto extends Thread {
 		this.igrač = igrač;
 		this.udp = udp;
 		this.loptica = loptica;
+		this.sfera = igrač.getSfera();
 	}
 
 	@Override
@@ -34,7 +37,7 @@ class ServerIgračSlanjeČesto extends Thread {
 
 		while (igračSpojen) {
 			try {
-				pomakLoptice();
+				podaciČesti();
 			} catch (final IOException e) {
 				igrač.odspojen();
 				break;
@@ -52,9 +55,10 @@ class ServerIgračSlanjeČesto extends Thread {
 		}
 	}
 
+	private void podaciČesti() throws IOException {
+		out.writeByte(Akcije.PODACI_ČESTI.id());
 
-	private void pomakLoptice() throws IOException {
-		out.writeByte(Akcije.POMAK_LOPTICE.id());
+		out.writeFloat((float) sfera.getR());
 
 		out.writeFloat((float) loptica.getX());
 		out.writeFloat((float) loptica.getY());

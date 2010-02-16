@@ -10,8 +10,6 @@ import java.util.HashMap;
 
 public class ServerListener implements Runnable {
 	private static final byte[] CONNECTION_STRING = "Bok!".getBytes();
-	/** Maksimalan broj konekcija s jednog IP-a */
-	private static final Short MAKSIMALAN_BROJ_KLONOVA = 2;
 
 	private final HashMap<InetAddress, Short> adrese = new HashMap<InetAddress, Short>();
 
@@ -36,7 +34,7 @@ public class ServerListener implements Runnable {
 				socket.receive(paket);
 
 				final InetAddress adresa = paket.getAddress();
-				if (adrese.containsKey(adresa) && (adrese.get(adresa).compareTo(MAKSIMALAN_BROJ_KLONOVA) >= 0)) {
+				if (adrese.containsKey(adresa) && (adrese.get(adresa).compareTo(Server.MAKSIMALAN_BROJ_KLONOVA) >= 0)) {
 					// dosegnut maksimalan broj konekcija s jednog IPa
 					continue;
 				}
@@ -44,7 +42,7 @@ public class ServerListener implements Runnable {
 
 				if (!Arrays.equals(paket.getData(), CONNECTION_STRING)) {
 					// neispravni handshake
-					System.out.println("Dobiven paket koji nema odgovarajući connection_string [ID: #" + brojIgračaZadnjeg + ", adresa: [" +
+					System.err.println("Dobiven paket koji nema odgovarajući connection_string [ID: #" + brojIgračaZadnjeg + ", adresa: [" +
 							paket.getSocketAddress() + "].");
 					continue;
 				}
@@ -53,9 +51,6 @@ public class ServerListener implements Runnable {
 
 				brojIgračaZadnjeg++;
 
-				if (!server.isIgraPokrenuta()) {
-					server.setIgraPokrenuta(true);
-				}
 				igrač.setDaemon(true);
 				igrač.start();
 

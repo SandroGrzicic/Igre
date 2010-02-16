@@ -29,7 +29,6 @@ public class MrežaSlanjeSpheres extends MrežaSlanje {
 		out.writeByte(Akcije.POMAK_SFERE.id());
 		out.writeFloat((float) sfera.getX());
 		out.writeFloat((float) sfera.getY());
-		out.writeFloat((float) sfera.getR()); // TODO: prebaciti u server side (tj. maknuti slanje radijusa)
 		out.writeBoolean(sfera.getA());
 		udp.pošalji(outBAOS);
 	}

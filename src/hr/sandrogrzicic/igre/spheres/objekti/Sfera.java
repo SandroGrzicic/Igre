@@ -70,6 +70,12 @@ public class Sfera implements Cloneable {
 		this.a = a;
 	}
 
+	public void set(final double x, final double y, final boolean a) {
+		this.x = x;
+		this.y = y;
+		this.a = a;
+	}
+
 	public void set(final double x, final double y, final double r, final boolean a) {
 		this.x = x;
 		this.y = y;
@@ -79,7 +85,7 @@ public class Sfera implements Cloneable {
 
 	@Override
 	public String toString() {
-		return "Sfera [a=" + a + ", r=" + r + ", x=" + x + ", y=" + y + "]";
+		return "Sfera [boja=" + boja + ", r=" + r + ", x=" + x + ", y=" + y + "]";
 	}
 
 

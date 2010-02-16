@@ -32,10 +32,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -77,14 +79,13 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	private static final String STRING_NULA = "0";
 	private static final double KONSTANTA_BRZINE = 4000;
 	private static final short PORUKE_DECAY_RATE = 255;
-	private static final String TEKST_HELP = "ALT+a\t\t Always on top\nALT+g\t\t Kvaliteta grafike: niska/visoka\nALT+e\t\t Efekti: prikaži/sakrij\nALT+c\t\t Chat: prikaži/sakrij\nALT+p\t\t PSYCHO!!!\n\n- Miš -\nLijeva tipka:\t smanjuj sferu (dok se drži tipka)\nSrednja tipka:\t smanjuj sferu (dok se opet ne stisne)\nDesna tipka:\t zaključaj trenutnu poziciju sfere"
-		+ "\n\nOgromno hvala svima koji su testirali ovu igru te mi tako iznimno pomogli!\nPosebne zahvale: Sh1fty, v-v, immortal_cro, Dr_Car_T, Vedran Lanc. Hvala!";
+	private static final String TEKST_HELP = "ALT+a\t\t Always on top\nALT+g\t\t Kvaliteta grafike: niska/visoka\nALT+e\t\t Efekti: prikaži/sakrij\nALT+c\t\t Chat: prikaži/sakrij\nALT+p\t\t PSYCHO!!!\n\n- Miš -\nLijeva tipka:\t smanjuj sferu (tijekom držanja)\nDesna tipka:\t smanjuj sferu (toggle)\nSrednja ili ALT+desna tipka:\t zaključaj trenutnu poziciju sfere (toggle)"
+		+ "\n\nOgromno hvala svima koji su testirali ovu igru te mi tako iznimno pomogli!\nPosebne zahvale: Sh1fty, v-v, immortal_cro, d4red3vil, Dr_Car_T, ce, Vedran Lanc, Rovokop. Hvala!";
 	// private static final Color BOJA_CHAT_SELF = new Color(192, 192, 255);
 	private Canvas okvir;
 	private int širina;
 	private int visina;
 	private BufferStrategy bufferStrategy;
-	private double sRd;
 	private final long kašnjenje;
 	private final HashMap<Key, Object> renderingHints;
 	private final GraphicsConfiguration gConfig;
@@ -99,8 +100,9 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	private boolean igraAktivna;
 	private final Sfera sfera;
 	private final Map<Integer, Igrač> igrači;
-	private final Map<Integer, Sfera> sfere = new HashMap<Integer, Sfera>();
+	private final ConcurrentHashMap<Integer, Sfera> sfere = new ConcurrentHashMap<Integer, Sfera>(16, 0.5f, 1);
 	private final Loptica loptica;
+	// private final List<Efekt> efekti;
 	private final List<Efekt> efekti;
 	private double radiusMax;
 	private boolean inicijalizacija;
@@ -130,10 +132,9 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	private final Igrač igrač;
 
 	private final DateFormat formatter;
-	private boolean pritisnutGumb3;
-	private boolean pritisnutGumb2;
-	private Map<Color, Color> bojeCacheSvjetlije;
-
+	private boolean pritisnutGumbSrednji;
+	private boolean pritisnutGumbDesni;
+	private final Map<Color, Color> bojeCacheSvjetlije = new HashMap<Color, Color>();
 
 	/**
 	 * Kreira novi KlijentPrikaz u obliku Swing JFramea.
@@ -147,7 +148,8 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		this.sfera = new Sfera(igrač.getSfera().getBoja(), igrač.getSfera().getR());
 		this.loptica = new Loptica(klijent.getLoptica().getR());
 		this.igrači = klijent.getIgrači();
-		this.efekti = new ArrayList<Efekt>();
+		this.efekti = new CopyOnWriteArrayList<Efekt>();
+		// this.efekti = new ArrayList<Efekt>();
 		this.chatBuffer = new char[255];
 		inicijalizacija = false;
 
@@ -191,8 +193,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	public void run() {
 		assert (inicijalizacija) : "Potrebno je pozvati setInit() metodu prije pokretanja klase!";
 
-		popuniCache();
-		sRd = sfera.getR();
+		osvježiCache();
 		igra();
 	}
 
@@ -200,15 +201,17 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	 * Popunjava mapu sfera koristeći popunjenu mapu igrača. Ključevi nove mape imaju istu referencu
 	 * kao ključevi stare, no sfere se kloniraju te su neovisne o mapi igrača.
 	 */
-	private void popuniCache() {
-		bojeCacheSvjetlije = new HashMap<Color, Color>();
-
+	private void osvježiCache() {
+		sfere.clear();
+		bojeCacheSvjetlije.clear();
+		System.out.println(igrači);
 		for (final Entry<Integer, Igrač> unos : igrači.entrySet()) {
 			if (unos.getValue() != igrač) {
 				sfere.put(unos.getKey(), unos.getValue().getSfera().clone());
 				bojeCacheSvjetlije.put(unos.getValue().getSfera().getBoja(), unos.getValue().getSfera().getBoja().brighter());
 			}
 		}
+		System.out.println(sfere);
 		bojeCacheSvjetlije.put(sfera.getBoja(), sfera.getBoja().brighter());
 	}
 
@@ -220,17 +223,15 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		fpsVrijemeNano = System.nanoTime();
 
 		while (true) {
-
-			while (!igraAktivna) {
-				try {
-					Thread.sleep(4 * kašnjenje);
-					if (klijent.isIgraAktivna()) {
-						igraAktivna = true;
-					}
-				} catch (final InterruptedException ignorable) {}
+			if (!igraAktivna) {
+				while (!igraAktivna) {
+					try {
+						Thread.sleep(4 * kašnjenje);
+					} catch (final InterruptedException ignorable) {}
+				}
+				osvježiCache();
 			}
 
-			fizika();
 			grafika();
 
 			vrijemeSpavanja = kašnjenje - System.currentTimeMillis() + vrijeme;
@@ -245,19 +246,6 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 			} catch (final InterruptedException ignorable) {}
 			vrijeme = System.currentTimeMillis();
 		}
-	}
-
-	private void fizika() {
-		// TODO: prebaciti u server side
-		if (sfera.getA() && (sfera.getR() > 24)) {
-			sfera.setR(sRd = sRd * 0.994);
-		} else if (sfera.getR() < radiusMax) {
-			sfera.setR(sRd = sRd * 1.002);
-		}
-		igrač.getSfera().setR(sRd / faktor);
-
-		// lokalna interpolacija.. uvjet: server_fps = local_fps
-		// loptica.setPos(loptica.getX() + loptica.getXv(), loptica.getY() + loptica.getYv());
 	}
 
 	private void grafika() {
@@ -276,12 +264,10 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 
 		// sfere
 		g.setFont(FONT_SFERE);
-		synchronized (sfere) {
-			for (final Entry<Integer, Sfera> unos : sfere.entrySet()) {
-				final Igrač i = igrači.get(unos.getKey());
-				if (i != null) {
-					iscrtajSferu(g, unos.getValue(), i);
-				}
+		for (final Entry<Integer, Sfera> unos : sfere.entrySet()) {
+			final Igrač i = igrači.get(unos.getKey());
+			if (i != null) {
+				iscrtajSferu(g, unos.getValue(), i);
 			}
 		}
 		// vlastita sfera
@@ -319,11 +305,9 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 
 		// efekti
 		if (!efekti.isEmpty()) {
-			synchronized (efekti) {
-				for (final Iterator<Efekt> it = efekti.iterator(); it.hasNext(); ) {
-					if (!it.next().iscrtaj(g)) {
-						it.remove();
-					}
+			for (final ListIterator<Efekt> it = efekti.listIterator(); it.hasNext();) {
+				if (!it.next().iscrtaj(g) && (it.previousIndex() < efekti.size())) {
+					efekti.remove(it.previousIndex());
 				}
 			}
 		}
@@ -402,7 +386,9 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 			final int alpha = 255 - (int) (System.currentTimeMillis() - porukeCacheVrijeme.get(deltaI)) / PORUKE_DECAY_RATE;
 			if (alpha > 0) {
 				final String poruka = porukeCache.get(deltaI);
-				g.setColor(new Color(poruke.get(deltaI).getIzvor().getSfera().getBoja().getRGB() + (alpha << 24), true));
+				// TODO: cacheati boje
+				g.setColor(new Color(poruke.get(deltaI).getIzvor().getSfera().getBoja().getRGB() + 32 + (32 << 8) + (32 << 16) + (alpha << 24),
+						true));
 				g.drawString(poruka, 8, 6 * visina / 7 - i * 10);
 			}
 		}
@@ -504,10 +490,8 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		okvir.createBufferStrategy(2);
 		bufferStrategy = okvir.getBufferStrategy();
 
-		renderingHints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-		renderingHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		renderingHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-		renderingHints.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
+		gfxKvaliteta = KVALITETA_MAX;
+		promjenaGrafičkihPostavki();
 	}
 
 
@@ -552,28 +536,37 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	public void mousePressed(final MouseEvent e) {
 		switch (e.getButton()) {
 		case MouseEvent.BUTTON1:
-			sfera.setA(true);
-			pritisnutGumb2 = false;
+			igrač.getSfera().setA(true);
+			pritisnutGumbDesni = false;
 			break;
 		case MouseEvent.BUTTON2:
-			sfera.setA(true);
-			pritisnutGumb2 = !pritisnutGumb2;
+			pritisnutGumbSrednji();
 			break;
 		case MouseEvent.BUTTON3:
-			pritisnutGumb3 = !pritisnutGumb3;
-			if (pritisnutGumb3) {
-				okvir.removeMouseMotionListener(this);
+			if (e.isAltDown()) {
+				// simulacija srednje tipke
+				pritisnutGumbSrednji();
 			} else {
-				okvir.addMouseMotionListener(this);
+				igrač.getSfera().setA(true);
+				pritisnutGumbDesni = !pritisnutGumbDesni;
 			}
 			break;
 		}
 	}
 
+	private void pritisnutGumbSrednji() {
+		pritisnutGumbSrednji = !pritisnutGumbSrednji;
+		if (pritisnutGumbSrednji) {
+			okvir.removeMouseMotionListener(this);
+		} else {
+			okvir.addMouseMotionListener(this);
+		}
+	}
+
 	@Override
 	public void mouseReleased(final MouseEvent e) {
-		if (!pritisnutGumb2) {
-			sfera.setA(false);
+		if (!pritisnutGumbDesni) {
+			igrač.getSfera().setA(false);
 		}
 	}
 
@@ -614,19 +607,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 				}
 				break;
 			case 'g':
-				if (gfxKvaliteta == KVALITETA_MAX) {
-					gfxKvaliteta = KVALITETA_MIN;
-					renderingHints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
-					renderingHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-					renderingHints.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-					renderingHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-				} else if (gfxKvaliteta == KVALITETA_MIN) {
-					gfxKvaliteta = KVALITETA_MAX;
-					renderingHints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-					renderingHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					renderingHints.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
-					renderingHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-				}
+				promjenaGrafičkihPostavki();
 				break;
 			case 'e':
 				crtajEfekte = !crtajEfekte;
@@ -667,9 +648,24 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 				chatBuffer[chatBufferPos++] = e.getKeyChar();
 				chatBufferStr = new String(chatBuffer, 0, chatBufferPos);
 			}
-
 		}
+	}
 
+	/** Postavi grafičke postavke na minimum ili maksimum, ovisno o trenutnim postavkama. */
+	private void promjenaGrafičkihPostavki() {
+		if (gfxKvaliteta == KVALITETA_MAX) {
+			gfxKvaliteta = KVALITETA_MIN;
+			renderingHints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
+			renderingHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+			renderingHints.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+			renderingHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		} else if (gfxKvaliteta == KVALITETA_MIN) {
+			gfxKvaliteta = KVALITETA_MAX;
+			renderingHints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+			renderingHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			renderingHints.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
+			renderingHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+		}
 	}
 
 	@Override
@@ -698,9 +694,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	/** Prikaži sudar sfere i loptice grafički. */
 	public void sudar(final int id, final double x, final double y, final double jačina) {
 		if (crtajEfekte) {
-			synchronized (efekti) {
-				efekti.add(new Sudar(x, y, jačina, igrači.get(id).getSfera().getBoja()));
-			}
+			efekti.add(new Sudar(x, y, jačina, igrači.get(id).getSfera().getBoja()));
 		}
 	}
 
@@ -709,18 +703,17 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	public void primljenPaket(final DataInputStream paket) throws IOException {
 		int id;
 		switch (Akcije.get(paket.readByte())) {
-		case POMAK_LOPTICE:
+		case PODACI_ČESTI:
+			sfera.setR(faktor * paket.readFloat());
 			loptica.set(faktor * paket.readFloat(), faktor * paket.readFloat(), faktor * paket.readFloat(), faktor * paket.readFloat());
 			break;
 		case PODACI_NISKI_PRIORITET:
 			setBodovi(paket.readLong());
-			synchronized (sfere) {
-				for (final Entry<Integer, Sfera> unos : sfere.entrySet()) {
-					id = paket.readInt();
-					if (igrači.containsKey(unos.getKey())) {
-						sfere.get(unos.getKey()).set(faktor * paket.readFloat(), faktor * paket.readFloat(), faktor * paket.readFloat(),
-								paket.readBoolean());
-					}
+			for (final Entry<Integer, Sfera> unos : sfere.entrySet()) {
+				id = paket.readInt();
+				if (igrači.containsKey(unos.getKey())) {
+					sfere.get(unos.getKey()).set(faktor * paket.readFloat(), faktor * paket.readFloat(), faktor * paket.readFloat(),
+							paket.readBoolean());
 				}
 			}
 			break;
@@ -736,19 +729,15 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 			break;
 		case IGRAČ_SPOJEN:
 			id = paket.readInt();
-			synchronized (sfere) {
-				final Sfera s = new Sfera(new Color(paket.readInt()),
-						faktor * paket.readDouble(), faktor * paket.readFloat(), faktor * paket.readFloat(), false);
-				sfere.put(id, s);
-				bojeCacheSvjetlije.put(s.getBoja(), s.getBoja().brighter());
-			}
+			final Sfera s = new Sfera(new Color(paket.readInt()),
+					faktor * paket.readDouble(), faktor * paket.readFloat(), faktor * paket.readFloat(), false);
+			sfere.put(id, s);
+			bojeCacheSvjetlije.put(s.getBoja(), s.getBoja().brighter());
 			break;
 		case IGRAČ_ODSPOJEN:
 			id = paket.readInt();
-			synchronized (sfere) {
-				sfere.remove(id);
-				bojeCacheSvjetlije.remove(igrači.get(id).getSfera().getBoja());
-			}
+			sfere.remove(id);
+			bojeCacheSvjetlije.remove(igrači.get(id).getSfera().getBoja());
 			break;
 		}
 	}
@@ -761,6 +750,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	}
 
 	/** Osvježava cache poruka. */
+	@SuppressWarnings("unused")
 	private void chatOsvježi() {
 		porukeCache.clear();
 		for (final Poruka poruka : poruke) {

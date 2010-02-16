@@ -98,10 +98,10 @@ class DijalogOpcije extends JDialog {
 			}
 		});
 
-		final JButton Izlaz = new JButton("Izlaz");
-		Izlaz.setMaximumSize(new Dimension(100, 30));
-		Izlaz.setAlignmentX(CENTER_ALIGNMENT);
-		Izlaz.addActionListener(new ActionListener() {
+		final JButton izlaz = new JButton("Izlaz");
+		izlaz.setMaximumSize(new Dimension(100, 30));
+		izlaz.setAlignmentX(CENTER_ALIGNMENT);
+		izlaz.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
 				System.exit(0);
@@ -110,7 +110,7 @@ class DijalogOpcije extends JDialog {
 
 		gumbiBox.add(OK);
 		gumbiBox.add(Box.createHorizontalStrut(32));
-		gumbiBox.add(Izlaz);
+		gumbiBox.add(izlaz);
 		komponente.add(gumbiBox);
 
 		add(komponente);
@@ -137,8 +137,8 @@ class DijalogOpcije extends JDialog {
 		boja = bojaChooser.getColor();
 		// test za pretamnu ili presvijetlu boju
 		final float[] komponente = Color.RGBtoHSB(boja.getRed(), boja.getGreen(), boja.getBlue(), null);
-		if (komponente[2] < 0.2f) {
-			komponente[2] = 0.2f;
+		if (komponente[2] < 0.3f) {
+			komponente[2] = 0.3f;
 		}
 		if (komponente[2] > 0.8f) {
 			komponente[2] = 0.8f;
@@ -150,6 +150,7 @@ class DijalogOpcije extends JDialog {
 				final int w = Integer.parseInt(rezolucijaCustom.getText());
 				final int h = w;
 				if ((w < 240)) {
+					rezolucijaCustom.setBackground(Color.RED);
 					return;
 				}
 				rezolucija = new Dimension(w, h);
