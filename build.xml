@@ -9,7 +9,7 @@
 		<delete file="seriousSpheresKlijent.jar"/>
 	</target>
 	<target name="create_runnable_jar">
-        <jar destfile="seriousSpheresKlijent.jar">
+        <jar destfile="C:/Documents/_Projekti/PHP/stuff/seriousSpheresKlijent.jar">
             <manifest>
                 <attribute name="Main-Class" value="org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader"/>
                 <attribute name="Rsrc-Main-Class" value="hr.sandrogrzicic.igre.spheres.klijent.KlijentSpheres"/>

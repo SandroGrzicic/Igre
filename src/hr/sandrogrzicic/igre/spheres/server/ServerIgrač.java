@@ -63,11 +63,13 @@ class ServerIgrač extends Thread {
 	/**
 	 * Šalje informaciju o sudaru loptice i sfere.
 	 * 
+	 * @param id
+	 *            id igrača
 	 * @param x
 	 *            koordinata sudara
 	 * @param y
 	 *            koordinata sudara
-	 * @param y2
+	 * @param jačina
 	 */
 	void sudar(final int id, final double x, final double y, final double jačina) throws IOException {
 		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(9);
@@ -104,29 +106,32 @@ class ServerIgrač extends Thread {
 
 	void igračSpojen(final ServerIgrač spojen) throws IOException {
 		if (spojen == this) {
-			return;
+			return; // TODO: suvišna provjera?
 		}
-		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(38 + 3 * spojen.getIme().length());
+		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(21 + 3 * spojen.getIme().length());
 		final DataOutputStream out = new DataOutputStream(outBAOS);
 
 		out.writeByte(Akcije.IGRAČ_SPOJEN.id());
+
 		out.writeInt(spojen.getID());
 		out.writeInt(spojen.getSfera().getBoja().getRGB());
-		out.writeDouble(spojen.getSfera().getR());
+		out.writeFloat((float) spojen.getSfera().getR());
 		out.writeFloat((float) spojen.getSfera().getX());
 		out.writeFloat((float) spojen.getSfera().getY());
 		out.writeUTF(spojen.getIme());
 		udp.pošalji(outBAOS);
+		// System.out.println("[" + igračID + "] uspješno dobio poruku: Igrač [" + spojen.getID() + "] spojen!");
 	}
 
-	void igračOdspojen(final ServerIgrač igrač) throws IOException {
-		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(8);
+	void igračOdspojen(final ServerIgrač odspojen) throws IOException {
+		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(5);
 		final DataOutputStream out = new DataOutputStream(outBAOS);
 
 		out.writeByte(Akcije.IGRAČ_ODSPOJEN.id());
-		out.writeInt(igrač.getID());
+
+		out.writeInt(odspojen.getID());
 		udp.pošalji(outBAOS);
-		System.out.println("[" + igračID + "] uspješno dobio poruku: Igrač [" + igrač.getID() + "] odspojen!");
+		// System.out.println("[" + igračID + "] uspješno dobio poruku: Igrač [" + odspojen.getID() + "] odspojen!");
 	}
 
 	@Override
@@ -184,7 +189,8 @@ class ServerIgrač extends Thread {
 
 		razmijeniInicijalnePodatke();
 
-		System.out.println("Igrač [" + igračID + "] [" + ime + "] uspješno spojen na port [" + socket.getLocalPort() + "]!");
+		System.out.println("+ Igrač [" + igračID + "] [" + ime + "] [" + socket.getRemoteSocketAddress() + "] uspješno spojen na port [" +
+				socket.getLocalPort() + "]!");
 	}
 
 	/** Razmjenjuje inicijalne podatke sa klijentom. */
@@ -211,20 +217,17 @@ class ServerIgrač extends Thread {
 		out.writeDouble(l.getR());
 
 		out.writeInt(server.getBrojIgrača());
-
 		for (final ServerIgrač igrač : server.getIgrači()) {
 			out.writeInt(igrač.getID());
 			final Color boja = igrač.getSfera().getBoja();
 			out.writeInt(boja.getRGB());
-			out.writeDouble(igrač.getSfera().getR());
+			out.writeFloat((float) igrač.getSfera().getR());
 			out.writeFloat((float) igrač.getSfera().getX());
 			out.writeFloat((float) igrač.getSfera().getY());
 			out.writeUTF(igrač.getIme());
 		}
 
-		sfera.setPos(Math.random(), Math.random());
-		out.writeFloat((float) sfera.getX());
-		out.writeFloat((float) sfera.getY());
+		sfera.setPos(0.5, 0.5);
 		out.writeDouble(sfera.getR());
 
 		udp.pošalji(outBAOS);

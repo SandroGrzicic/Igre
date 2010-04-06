@@ -27,7 +27,7 @@ public interface Prikaz extends Runnable {
 	void sudar(final int id, final double x, final double y, final double jačina);
 
 	/** Prima te obrađuje dolazni paket s podacima. */
-	void primljenPaket(DataInputStream paket) throws IOException;
+	void onPrimljenPaket(DataInputStream paket) throws IOException;
 
 	void setIgraAktivna(boolean igraAktivna);
 

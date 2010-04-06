@@ -62,7 +62,7 @@ class DijalogOpcije extends JDialog {
 		final Box rezolucijaBox = new Box(BoxLayout.X_AXIS);
 		final JLabel rezolucijaLabel = new JLabel("Rezolucija: ");
 		rezolucijaCombo = new JComboBox(Rezolucija.values());
-		rezolucijaCombo.setSelectedIndex(2);
+		rezolucijaCombo.setSelectedIndex(1);
 		rezolucijaCombo.setMaximumSize(rezolucijaCombo.getPreferredSize());
 		rezolucijaCustom = new JFormattedTextField(NumberFormat.getIntegerInstance());
 		rezolucijaCustom.setColumns(5);

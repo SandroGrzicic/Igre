@@ -2,7 +2,7 @@ package hr.sandrogrzicic.igre.spheres.klijent.prikaz;
 
 import java.awt.Color;
 
-/** Definicije često korištenih boja. */
+/** Često korištene boje. */
 enum Boja {
 
 	PLAVA("Plava", Color.BLUE.darker()),

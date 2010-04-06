@@ -64,22 +64,24 @@ public class MrežaSlanje extends Thread {
 	}
 
 	/**
-	 * Metoda ne radi ništa.
+	 * Defaultna implementacija ne radi ništa.
 	 * 
 	 * @throws IOException
 	 */
 	protected void mrežaPošalji() throws IOException {
 	}
 
-	/** Zove se kada igrač izađe iz igre ili zatvori prozor. */
-	public void klijentIzašao() throws IOException {
+	/** Zove se kada igrač izađe iz igre. */
+	public void klijentIzašao() {
 		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(512);
 		final DataOutputStream out = new DataOutputStream(outBAOS);
-		out.writeByte(Akcije.IGRAČ_IZAŠAO.id());
-		udp.pošalji(outBAOS);
+		try {
+			out.writeByte(Akcije.IGRAČ_IZAŠAO.id());
+			udp.pošalji(outBAOS); // baca NullPointerException ako socket nije spojen
+		} catch (final Exception ignorable) {}
 	}
 
-	/** Utility metoda za slanje određene akcije, bez ikakvih parametara. */
+	/** Šalje izravno određenu akciju, bez ikakvih parametara. */
 	void pošaljiAkciju(final Akcije akcija) throws IOException {
 		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(4);
 		final DataOutputStream out = new DataOutputStream(outBAOS);
@@ -88,6 +90,7 @@ public class MrežaSlanje extends Thread {
 		udp.pošalji(outBAOS);
 	}
 
+	/** Šalje chat poruku. */
 	public void pošaljiPoruku(final String poruka) throws IOException {
 		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(4);
 		final DataOutputStream out = new DataOutputStream(outBAOS);

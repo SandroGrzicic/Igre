@@ -36,7 +36,7 @@ public class MrežaPrimanje extends Thread {
 
 			try {
 				// blocka dok se ne primi paket ili ne istekne timeout
-				klijent.primljenPaket(udp.primi());
+				klijent.onPrimljenPaket(udp.primi());
 			} catch (final PortUnreachableException pue) {
 				klijent.izgubljenaVeza();
 			} catch (final SocketTimeoutException ste) {

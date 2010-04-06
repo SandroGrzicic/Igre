@@ -87,16 +87,17 @@ public class KlijentSpheres extends Klijent {
 
 		final int brojIgrača = in.readInt();
 		for (int i = 0; i < brojIgrača; i++) {
-			final Integer id = new Integer(in.readInt());
+			final int id = in.readInt();
 			igrači.put(id, new Igrač(id, new Sfera(new Color(in.readInt()),
-					in.readDouble(), in.readFloat(), in.readFloat(), false), in.readUTF()));
+					in.readFloat(), in.readFloat(), in.readFloat(), false), in.readUTF()));
 		}
 
 		igrači.put(igrač.getID(), igrač);
 
-		igrač.getSfera().set(in.readFloat(), in.readFloat(), in.readDouble(), false);
+		igrač.getSfera().set(0.5, 0.5, in.readDouble(), false);
 
 		((PrikazSpheres) prikazGlavni).setInit(radiusMax);
+
 	}
 
 
@@ -110,20 +111,20 @@ public class KlijentSpheres extends Klijent {
 
 	@SuppressWarnings("incomplete-switch")
 	@Override
-	public void primljenPaket(final DataInputStream paket) throws IOException {
+	public void onPrimljenPaket(final DataInputStream paket) throws IOException {
 		paket.mark(paket.available());
 
 		for (final Prikaz p : prikazi) {
-			p.primljenPaket(paket);
+			p.onPrimljenPaket(paket);
 			paket.reset();
 		}
 
-		int id;
+		final int id;
 		switch (Akcije.get(paket.readByte())) {
 		case IGRAČ_SPOJEN:
 			id = paket.readInt();
 			igrači.put(id, new Igrač(id, new Sfera(new Color(paket.readInt()),
-					paket.readDouble(), paket.readFloat(), paket.readFloat(), false), paket.readUTF()));
+					paket.readFloat(), paket.readFloat(), paket.readFloat(), false), paket.readUTF()));
 			// System.err.println("DEBUG: Spojen igrač [" + id + "]! Broj igrača: [" + igrači.size() + "]");
 			break;
 		case IGRAČ_ODSPOJEN:

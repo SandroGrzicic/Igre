@@ -204,14 +204,12 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	private void osvježiCache() {
 		sfere.clear();
 		bojeCacheSvjetlije.clear();
-		System.out.println(igrači);
 		for (final Entry<Integer, Igrač> unos : igrači.entrySet()) {
 			if (unos.getValue() != igrač) {
 				sfere.put(unos.getKey(), unos.getValue().getSfera().clone());
 				bojeCacheSvjetlije.put(unos.getValue().getSfera().getBoja(), unos.getValue().getSfera().getBoja().brighter());
 			}
 		}
-		System.out.println(sfere);
 		bojeCacheSvjetlije.put(sfera.getBoja(), sfera.getBoja().brighter());
 	}
 
@@ -265,13 +263,15 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		// sfere
 		g.setFont(FONT_SFERE);
 		for (final Entry<Integer, Sfera> unos : sfere.entrySet()) {
-			final Igrač i = igrači.get(unos.getKey());
-			if (i != null) {
-				iscrtajSferu(g, unos.getValue(), i);
+			try {
+				final Igrač ig = igrači.get(unos.getKey());
+				iscrtajSferu(g, unos.getValue(), ig.getIme());
+			} catch (final NullPointerException npe) {
+				// ignore
 			}
 		}
 		// vlastita sfera
-		iscrtajSferu(g, sfera.clone(), igrač);
+		iscrtajSferu(g, sfera.clone(), igrač.getIme());
 
 		// gornji tekst
 		g.setColor(BOJA_GORNJI_TEKST);
@@ -354,7 +354,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		bufferStrategy.show();
 	}
 
-	private final void iscrtajSferu(final Graphics2D g, final Sfera s, final Igrač ig) {
+	private final void iscrtajSferu(final Graphics2D g, final Sfera s, final String ime) {
 		g.setColor(Color.WHITE);
 		g.fillOval(zaokruži(s.getX() - s.getR() - 1), zaokruži(s.getY() - s.getR() - 1), zaokruži(2 * s.getR() + 2),
 				zaokruži(2 * s.getR() + 2));
@@ -366,7 +366,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 				zaokruži(2 * s.getR() - 16));
 		// ime igrača
 		g.setColor(Color.BLACK);
-		g.drawString(ig.getIme(), zaokruži(s.getX() - 3.5 * ig.getIme().length()) + 4, zaokruži(s.getY() + 3));
+		g.drawString(ime, zaokruži(s.getX() - 3.5 * ime.length()) + 4, zaokruži(s.getY() + 3));
 	}
 
 	private final void iscrtajChat(final Graphics2D g) {
@@ -700,7 +700,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 
 	@SuppressWarnings("incomplete-switch")
 	@Override
-	public void primljenPaket(final DataInputStream paket) throws IOException {
+	public void onPrimljenPaket(final DataInputStream paket) throws IOException {
 		int id;
 		switch (Akcije.get(paket.readByte())) {
 		case PODACI_ČESTI:
@@ -709,10 +709,9 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 			break;
 		case PODACI_NISKI_PRIORITET:
 			setBodovi(paket.readLong());
-			for (final Entry<Integer, Sfera> unos : sfere.entrySet()) {
-				id = paket.readInt();
-				if (igrači.containsKey(unos.getKey())) {
-					sfere.get(unos.getKey()).set(faktor * paket.readFloat(), faktor * paket.readFloat(), faktor * paket.readFloat(),
+			while ((id = paket.readInt()) != -1) {
+				if (sfere.containsKey(id)) {
+					sfere.get(id).set(faktor * paket.readFloat(), faktor * paket.readFloat(), faktor * paket.readFloat(),
 							paket.readBoolean());
 				}
 			}
@@ -730,7 +729,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		case IGRAČ_SPOJEN:
 			id = paket.readInt();
 			final Sfera s = new Sfera(new Color(paket.readInt()),
-					faktor * paket.readDouble(), faktor * paket.readFloat(), faktor * paket.readFloat(), false);
+					faktor * paket.readFloat(), faktor * paket.readFloat(), faktor * paket.readFloat(), false);
 			sfere.put(id, s);
 			bojeCacheSvjetlije.put(s.getBoja(), s.getBoja().brighter());
 			break;

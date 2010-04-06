@@ -173,16 +173,15 @@ public abstract class Klijent {
 		return igrači;
 	}
 
+	/** Gasi igru i JVM; prije gašenja šalje paket serveru da je igrač izašao ukoliko je to moguće. */
 	public void ugasiIgru() {
-		try {
-			if (mrežaSlanje != null) {
-				mrežaSlanje.klijentIzašao();
-			}
-		} catch (final IOException ignorable) {}
+		if (mrežaSlanje != null) {
+			mrežaSlanje.klijentIzašao();
+		}
 		System.exit(0);
 	}
 
-	public abstract void primljenPaket(DataInputStream paket) throws IOException;
-
+	/** Zove se kada je primljen paket. Izvedene klase mogu procesirati dobiveni paket. */
+	public abstract void onPrimljenPaket(DataInputStream paket) throws IOException;
 
 }

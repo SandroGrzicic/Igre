@@ -6,7 +6,6 @@ public class Igrač {
 	private int ID;
 	private Sfera sfera;
 	private String ime;
-	private long bodovi;
 
 	public Igrač() {
 	}
@@ -35,14 +34,6 @@ public class Igrač {
 		return ime;
 	}
 
-	public long getBodovi() {
-		return bodovi;
-	}
-
-	public void setBodovi(final long bodovi) {
-		this.bodovi = bodovi;
-	}
-
 	public void setIme(final String ime) {
 		this.ime = ime;
 	}
@@ -57,7 +48,7 @@ public class Igrač {
 
 	@Override
 	public String toString() {
-		return "Igrač [ID=" + ID + ", bodovi=" + bodovi + ", ime=" + ime + ", sfera=" + sfera + "]";
+		return "Igrač [ID=" + ID + ", ime=" + ime + ", sfera=" + sfera + "]";
 	}
 
 }

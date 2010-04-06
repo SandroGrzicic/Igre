@@ -16,7 +16,7 @@ public class Poruka {
 	private final String poruka;
 
 	/**
-	 * Konstruira novu poruku zadanog tipa.
+	 * Konstruira novu poruku zadanog tipa. Parametar (Igrač) izvor se ne mijenja korištenjem ove klase.
 	 */
 	public Poruka(final long timestamp, final PorukaTip tip, final Igrač izvor, final String poruka) {
 		this.timestamp = timestamp;

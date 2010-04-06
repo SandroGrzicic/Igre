@@ -82,7 +82,7 @@ public class ServerIgra implements Runnable {
 	/**
 	 * Pomiče lopticu te provjerava sudare. Fizika.
 	 */
-	final void pomakniLopticu() {
+	private void pomakniLopticu() {
 		double x = loptica.getX();
 		double y = loptica.getY();
 		double xv = loptica.getXv();

@@ -4,13 +4,10 @@ import hr.sandrogrzicic.igre.spheres.objekti.Loptica;
 
 import java.io.IOException;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-
-
 
 /**
  * Glavni server za igru.
@@ -18,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * @author Sandro Gržičić
  */
 public final class Server {
-	public static final int VERZIJA = 20;
+	public static final int VERZIJA = 21;
 	static final long KAŠNJENJE_MREŽA_RIJETKO = 100;
 	static final long KAŠNJENJE_MREŽA_ČESTO = 25;
 	static final long KAŠNJENJE_IGRA = 100;
@@ -29,7 +26,7 @@ public final class Server {
 	/** Maksimalan broj konekcija s jednog IP-a */
 	static final Short MAKSIMALAN_BROJ_KLONOVA = 8;
 
-	private final List<ServerIgrač> igrači = new ArrayList<ServerIgrač>();
+	private final List<ServerIgrač> igrači = new CopyOnWriteArrayList<ServerIgrač>();
 	private final ServerListener serverListener;
 	private final ServerIgra serverIgra;
 
@@ -61,7 +58,7 @@ public final class Server {
 	 * @param y koordinata sudara
 	 * @param jačina sudara
 	 */
-	synchronized void sudar(final int id, final double x, final double y, final double jačina) {
+	void sudar(final int id, final double x, final double y, final double jačina) {
 		for (final ServerIgrač igrač : igrači) {
 			try {
 				igrač.sudar(id, x, y, jačina);
@@ -72,7 +69,7 @@ public final class Server {
 	}
 
 	/** Postavlja nove bodove. */
-	synchronized void bodovi(final double bodovi) {
+	void bodovi(final double bodovi) {
 		for (final ServerIgrač igrač : igrači) {
 			igrač.setBodovi(Math.ceil(bodovi));
 		}
@@ -81,7 +78,7 @@ public final class Server {
 	/**
 	 * Javlja igračima da je stigla nova chat poruka.
 	 */
-	synchronized void chatPoruka(final ServerIgrač igračIzvor, final long vrijemeUNIX, final String poruka) {
+	void chatPoruka(final ServerIgrač igračIzvor, final long vrijemeUNIX, final String poruka) {
 		System.out.println("* Chat [" + vrijemeUNIX + "] [" + igračIzvor.getID() + "]: [" + poruka + "]");
 		for (final ServerIgrač igrač : igrači) {
 			if (igrač.getID() == igračIzvor.getID()) {
@@ -96,8 +93,7 @@ public final class Server {
 	}
 
 	/** Javlja igračima da je novi igrač spojen. */
-	synchronized void igračSpojen(final ServerIgrač spojen) {
-		System.out.println("+ Igrač [" + spojen.getID() + "] uspješno spojen!");
+	void igračSpojen(final ServerIgrač spojen) {
 		setIgraPokrenuta(true);
 
 		for (final ServerIgrač igrač : igrači) {
@@ -110,7 +106,7 @@ public final class Server {
 	}
 
 	/** Javlja igračima da je neki igrač odspojen. */
-	synchronized void igračOdspojen(final ServerIgrač odspojen) {
+	void igračOdspojen(final ServerIgrač odspojen) {
 		System.out.println("- Igrač [" + odspojen.getID() + "] [" + odspojen.getIme() + "] odspojen!");
 		igrači.remove(odspojen);
 
@@ -152,7 +148,7 @@ public final class Server {
 		return serverIgra.isIgraPokrenuta();
 	}
 
-	public void setIgraPokrenuta(final boolean igraPokrenuta) {
+	synchronized public void setIgraPokrenuta(final boolean igraPokrenuta) {
 		serverIgra.setIgraPokrenuta(igraPokrenuta);
 	}
 

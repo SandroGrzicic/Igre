@@ -8,7 +8,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-
 class ServerIgračSlanjeRijetko extends Thread {
 	private final ServerIgrač igrač;
 	private boolean igračSpojen = true;
@@ -56,7 +55,7 @@ class ServerIgračSlanjeRijetko extends Thread {
 	}
 
 	private void pošaljiNiskoPrioritetnePodatke() throws IOException {
-		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(4 + 21 * igrači.size());
+		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(9 + 21 * igrači.size());
 		final DataOutputStream out = new DataOutputStream(outBAOS);
 
 		out.writeByte(Akcije.PODACI_NISKI_PRIORITET.id());
@@ -65,19 +64,17 @@ class ServerIgračSlanjeRijetko extends Thread {
 		out.writeLong(igrač.getBodovi());
 
 		// pošalji lokacije sferi
-		synchronized (igrači) {
-			for (final ServerIgrač ig : igrači) {
-				if (ig != igrač) {
-					out.writeInt(ig.getID());
-					out.writeFloat((float) ig.getSfera().getX());
-					out.writeFloat((float) ig.getSfera().getY());
-					out.writeFloat((float) ig.getSfera().getR());
-					out.writeBoolean(ig.getSfera().getA());
-				}
-				udp.pošalji(outBAOS);
+		for (final ServerIgrač ig : igrači) {
+			if (ig != igrač) {
+				out.writeInt(ig.getID());
+				out.writeFloat((float) ig.getSfera().getX());
+				out.writeFloat((float) ig.getSfera().getY());
+				out.writeFloat((float) ig.getSfera().getR());
+				out.writeBoolean(ig.getSfera().getA());
 			}
 		}
-
+		out.writeInt(-1); // kraj slanja; važno jer klijent možda ne zna koliko ima stvarno spojenih klijenata
+		udp.pošalji(outBAOS);
 	}
 
 	/** Prekida izvođenje ove dretve. */
