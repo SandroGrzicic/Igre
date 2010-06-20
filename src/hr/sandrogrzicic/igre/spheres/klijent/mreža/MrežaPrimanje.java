@@ -1,6 +1,6 @@
 package hr.sandrogrzicic.igre.spheres.klijent.mreža;
 
-import hr.sandrogrzicic.igre.spheres.klijent.Klijent;
+import hr.sandrogrzicic.igre.klijent.AbstractKlijent;
 import hr.sandrogrzicic.igre.utility.UDP;
 
 import java.io.IOException;
@@ -9,11 +9,11 @@ import java.net.SocketTimeoutException;
 
 
 public class MrežaPrimanje extends Thread {
-	private final Klijent klijent;
+	private final AbstractKlijent klijent;
 	private final UDP udp;
 	private boolean igraAktivna;
 
-	public MrežaPrimanje(final Klijent klijent, final UDP udp) {
+	public MrežaPrimanje(final AbstractKlijent klijent, final UDP udp) {
 		this.setName(getClass().getCanonicalName());
 		this.setDaemon(true);
 		this.klijent = klijent;

@@ -1,9 +1,9 @@
 package hr.sandrogrzicic.igre.spheres.klijent.prikaz;
 
+import hr.sandrogrzicic.igre.klijent.AbstractKlijent;
 import hr.sandrogrzicic.igre.spheres.Akcije;
 import hr.sandrogrzicic.igre.spheres.klijent.Igrač;
 import hr.sandrogrzicic.igre.spheres.klijent.Klijent;
-import hr.sandrogrzicic.igre.spheres.klijent.KlijentSpheres;
 import hr.sandrogrzicic.igre.spheres.klijent.efekti.Efekt;
 import hr.sandrogrzicic.igre.spheres.klijent.efekti.Sudar;
 import hr.sandrogrzicic.igre.spheres.objekti.Loptica;
@@ -52,7 +52,7 @@ import javax.swing.UIManager;
 public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseListener, MouseMotionListener, KeyListener {
 	private static final long serialVersionUID = 4455192690762108750L;
 	static final String NASLOV_PROZORA = "Serious Spheres";
-	private static final String UPPER_TEXT = "Serious Spheres by SeriousWorm build " + Klijent.VERZIJA;
+	private static final String UPPER_TEXT = "Serious Spheres by SeriousWorm build " + AbstractKlijent.VERZIJA;
 	private static final Color BOJA_VISINA_1 = new Color(255, 192, 192);
 	private static final Color BOJA_VISINA_2 = new Color(255, 128, 128);
 	private static final Color BOJA_VISINA_3 = new Color(255, 64, 64);
@@ -86,7 +86,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	private int širina;
 	private int visina;
 	private BufferStrategy bufferStrategy;
-	private final long kašnjenje;
+	private final int kašnjenje;
 	private final HashMap<Key, Object> renderingHints;
 	private final GraphicsConfiguration gConfig;
 
@@ -96,7 +96,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	private final double[] fpsAvg = new double[16];
 	private int fpsAvgNext = 0;
 
-	final KlijentSpheres klijent;
+	final Klijent klijent;
 	private boolean igraAktivna;
 	private final Sfera sfera;
 	private final Map<Integer, Igrač> igrači;
@@ -139,7 +139,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	/**
 	 * Kreira novi KlijentPrikaz u obliku Swing JFramea.
 	 */
-	public PrikazSpheresJFrame(final KlijentSpheres klijent, final Igrač igrač, final String[] args) {
+	public PrikazSpheresJFrame(final Klijent klijent, final Igrač igrač) {
 		super(NASLOV_PROZORA);
 		this.klijent = klijent;
 		this.renderingHints = new HashMap<Key, Object>();
@@ -153,13 +153,13 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		this.chatBuffer = new char[255];
 		inicijalizacija = false;
 
-		final Map<String, Object> argumenti = parsirajArgumente(args);
+		// final Map<String, Object> argumenti = parsirajArgumente(args);
+		// this.igrač.setIme((String) argumenti.get("ime"));
+		// this.rezolucija = (Dimension) argumenti.get("res");
 
 		// default postavke
-		this.kašnjenje = 8;
+		this.kašnjenje = 6;
 		this.chatUključen = true;
-		this.igrač.setIme((String) argumenti.get("ime"));
-		this.rezolucija = (Dimension) argumenti.get("res");
 		this.formatter = new SimpleDateFormat("kk:mm:ss");
 
 		try {
@@ -700,6 +700,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 
 	@SuppressWarnings("incomplete-switch")
 	@Override
+	// TODO: prebaciti većinu ovoga u općeniti Prikaz koji to dalje delegira..
 	public void onPrimljenPaket(final DataInputStream paket) throws IOException {
 		int id;
 		switch (Akcije.get(paket.readByte())) {

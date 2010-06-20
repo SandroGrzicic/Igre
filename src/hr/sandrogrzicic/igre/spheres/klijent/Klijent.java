@@ -1,187 +1,151 @@
 package hr.sandrogrzicic.igre.spheres.klijent;
 
-/** udp && ((ip.src_host == ss) && ip.dst_host == sworm.no-ip.com) || ((ip.src_host == sworm.no-ip.com)) */
-/** src host ss and dst host sworm.no-ip.com or src host sworm.no-ip.com */
-import hr.sandrogrzicic.igre.exceptions.NevaljaniPaketException;
+import hr.sandrogrzicic.igre.klijent.AbstractKlijent;
+import hr.sandrogrzicic.igre.spheres.Akcije;
 import hr.sandrogrzicic.igre.spheres.klijent.mreža.MrežaPrimanje;
-import hr.sandrogrzicic.igre.spheres.klijent.mreža.MrežaSlanje;
+import hr.sandrogrzicic.igre.spheres.klijent.mreža.MrežaSlanjeSpheres;
 import hr.sandrogrzicic.igre.spheres.klijent.prikaz.Prikaz;
-import hr.sandrogrzicic.igre.utility.UDP;
+import hr.sandrogrzicic.igre.spheres.klijent.prikaz.PrikazSpheres;
+import hr.sandrogrzicic.igre.spheres.klijent.prikaz.PrikazSpheresJFrame;
+import hr.sandrogrzicic.igre.spheres.objekti.Loptica;
+import hr.sandrogrzicic.igre.spheres.objekti.Sfera;
 
+import java.awt.Color;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 
 /**
- * Klijent za igru. Kontroler u MVC paradigmi.
+ * Klijent za igru Serious Spheres. Kontroler.
  * 
  * @author SeriousWorm
  */
-public abstract class Klijent {
-	public static final int VERZIJA = hr.sandrogrzicic.igre.spheres.server.Server.VERZIJA;
-	public static final int IME_MAX_LENGTH = 32;
-	private static final byte[] CONNECTION_STRING = "Bok!".getBytes();
-	private static final int PAKET_MAX_VELIČINA = 1024;
-	private static final int SOCKET_TIMEOUT = 5000;
-	protected boolean igraAktivna = false;
-	protected final Igrač igrač;
-	protected final Map<Integer, Igrač> igrači;
-	protected double radiusMax;
-	private SocketAddress adresa;
-	private final InetSocketAddress adresaServera;
-	protected final Set<Prikaz> prikazi;
-	protected final EnumMap<Postavke, Object> postavke;
-	protected final UDP udp;
+public class Klijent extends AbstractKlijent {
+	private final Loptica loptica;
+	private final Sfera sfera;
+	private PrikazSpheres prikaz;
 
-	protected MrežaPrimanje mrežaPrimanje;
-	protected MrežaSlanje mrežaSlanje;
-	protected Prikaz prikazGlavni;
-
-	/**
-	 * Kreira novi Klijent. Stvara i pokreće dretve za slanje i primanje mrežnih podataka te prikaznu dretvu.
-	 */
-	public Klijent() {
-		// this.adresaServera = new InetSocketAddress("127.0.0.1", 7710);
-		this.adresaServera = new InetSocketAddress("sworm.no-ip.com", 7710);
-		this.udp = new UDP(PAKET_MAX_VELIČINA);
-		this.igrač = new Igrač();
-		this.igrači = new ConcurrentHashMap<Integer, Igrač>(16, 0.5f, 1);
-		this.postavke = new EnumMap<Postavke, Object>(Postavke.class);
-		this.prikazi = new HashSet<Prikaz>();
+	public Klijent(final String hostname, final int port) {
+		super(hostname, port);
+		loptica = new Loptica();
+		sfera = new Sfera();
+		igrač.setSfera(sfera);
+		igraAktivna = true;
 	}
 
-	/** Pokreće klijent. Prikaz i mreža se aktiviraju. */
-	protected abstract void pokreni(String[] argumenti);
+	@Override
+	protected void pokreni() {
+		// stvara prikaz; svi bitni parametri (npr. ime igrača) su postavljeni nakon ove naredbe.
+		this.prikaz = new PrikazSpheresJFrame(this, igrač);
+		// TODO: ukloniti "glavni" prikaz
+		this.prikazGlavni = prikaz;
 
-	/** Pokušava se spojiti na server. Ukoliko je spajanje neuspješno, generira upit za ponovnim spajanjem. */
-	void spojiSeNaServer() {
-		try {
-			initConnection();
-		} catch (final IOException e) {
-			if (prikazGlavni.prikažiUpit("Neuspješno spajanje na server.\nPokušati ponovo?", "Neuspješno spajanje")) {
-				spojiSeNaServer();
-			} else {
-				System.exit(1);
-			}
-		}
+		spojiSeNaServer();
+
+		new Thread(prikazGlavni).start();
+
+		mrežaPrimanje = new MrežaPrimanje(this, udp);
+		mrežaSlanje = new MrežaSlanjeSpheres(this, udp);
+		mrežaPrimanje.start();
+		mrežaSlanje.start();
+		igraAktivna(true);
+
 	}
 
 	/**
-	 * Spajanje na server.
+	 * Spajanje na server te izmjena inicijalnih podataka vezanih uz igru.
 	 */
+	@Override
 	protected void initConnection() throws IOException {
-		// inicijalni socket za spajanje na server (listen port)
-		udp.otvoriSocket();
-		udp.setTimeout(SOCKET_TIMEOUT);
-		// "Bok!" paket serveru
-		udp.send(new DatagramPacket(CONNECTION_STRING, 4, adresaServera));
-		// primi pravi port servera
-		final DatagramPacket paket = new DatagramPacket(new byte[PAKET_MAX_VELIČINA], PAKET_MAX_VELIČINA);
-		udp.receive(paket);
-		final int port;
-		try {
-			port = Integer.parseInt(new String(paket.getData(), 0, paket.getLength()));
-		} catch (final NumberFormatException nfe) {
-			throw new NevaljaniPaketException(paket.getData(), paket.getLength());
+		assert (igrač.getIme() != null) : "Ime igrača nije postavljeno!";
+
+		super.initConnection();
+
+		// pošalji korisničke podatke (ime, boja sfere)
+		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(1024);
+		final DataOutputStream out = new DataOutputStream(outBAOS);
+
+		out.writeUTF(igrač.getIme());
+		out.writeInt(igrač.getSfera().getBoja().getRGB());
+		udp.pošalji(outBAOS);
+
+		// primi podatke od servera
+		final DataInputStream in = udp.primi();
+
+		final int verzijaServer = in.readInt();
+		if (VERZIJA != verzijaServer) {
+			prikazGlavni.prikažiGrešku("Nekompatibilna verzija (klijent: [" + VERZIJA + "], server: [" + verzijaServer + "])!", null);
+			System.exit(5);
 		}
-		// spoji se na pravi port
-		adresa = new InetSocketAddress(paket.getAddress(), port);
-		udp.connect(adresa);
-	}
+		igrač.setID(in.readInt());
 
-	public void izgubljenaVeza() {
-		igraAktivna(false);
-		if (prikazGlavni.prikažiUpit("Izgubljena veza sa serverom.\n Spojiti se ponovo?", "Izgubljena veza sa serverom")) {
-			spojiSeNaServer();
-			igraAktivna(true);
-		} else {
-			System.exit(2);
-		}
-	}
+		radiusMax = in.readDouble();
+		loptica.setR(in.readDouble());
 
-	/** Aktivira ili deaktivira izvođenje igre. */
-	protected void igraAktivna(final boolean novoStanje) {
-		mrežaPrimanje.setIgraAktivna(novoStanje);
-		mrežaSlanje.setIgraAktivna(novoStanje);
-		igraAktivna = novoStanje;
-		for (final Prikaz p : prikazi) {
-			p.setIgraAktivna(novoStanje);
-		}
-	}
+		igrači.clear();
 
-	public boolean isIgraAktivna() {
-		return igraAktivna;
-	}
-
-	/** Javlja svim registriranim prikazima da je došlo do promjene postavki. */
-	public void propagirajPromjenuPostavki() {
-		for (final Prikaz p : prikazi) {
-			p.promjenaPostavki();
-		}
-	}
-
-
-	/** Vraća zadanu postavku. */
-	public Object getPostavka(final Postavke postavka) {
-		return postavke.get(postavka);
-	}
-
-	/** Postavlja postavku na zadanu vrijednost. Null vrijednosti nisu dozvoljene. */
-	public void setPostavka(final Postavke postavka, final Object vrijednost) {
-		if (vrijednost == null) {
-			throw new IllegalArgumentException("Postavka ne smije biti null!");
+		final int brojIgrača = in.readInt();
+		for (int i = 0; i < brojIgrača; i++) {
+			final int id = in.readInt();
+			igrači.put(id, new Igrač(id, new Sfera(new Color(in.readInt()),
+					in.readFloat(), in.readFloat(), in.readFloat(), false), in.readUTF()));
 		}
 
-		postavke.put(postavka, vrijednost);
-		propagirajPromjenuPostavki();
+		igrači.put(igrač.getID(), igrač);
+
+		igrač.getSfera().set(0.5, 0.5, in.readDouble(), false);
+
+		((PrikazSpheres) prikazGlavni).setInit(radiusMax);
+
 	}
 
-	void setBodovi(final long bodovi) {
-		prikazGlavni.setBodovi(bodovi);
-	}
-
-	public final void chatPošalji(final String poruka) {
-		try {
-			mrežaSlanje.pošaljiPoruku(poruka);
-		} catch (final IOException io) {
-			izgubljenaVeza();
-		}
-	}
 
 	/**
-	 * Registrira zadani prikaz za primanje događaja.
+	 * Pokreće klijent sa defaultnim postavkama.
 	 */
-	public void dodajPrikaz(final Prikaz p) {
-		prikazi.add(p);
-	}
-	/**
-	 * Uklanja zadani prikaz sa popisa primanja događaja.
-	 */
-	public void ukloniPrikaz(final Prikaz p) {
-		prikazi.remove(p);
+	public static void main(final String[] args) {
+		// final String host = "sworm.no-ip.com";
+		final String host = "192.168.0.7";
+		final int port = 7710;
+		new Klijent(host, port).pokreni();
 	}
 
-	public Map<Integer, Igrač> getIgrači() {
-		return igrači;
-	}
 
-	/** Gasi igru i JVM; prije gašenja šalje paket serveru da je igrač izašao ukoliko je to moguće. */
-	public void ugasiIgru() {
-		if (mrežaSlanje != null) {
-			mrežaSlanje.klijentIzašao();
+	@SuppressWarnings("incomplete-switch")
+	@Override
+	public void onPrimljenPaket(final DataInputStream paket) throws IOException {
+		paket.mark(paket.available());
+
+		for (final Prikaz p : prikazi) {
+			p.onPrimljenPaket(paket);
+			paket.reset();
 		}
-		System.exit(0);
+
+		final int id;
+		switch (Akcije.get(paket.readByte())) {
+		case IGRAČ_SPOJEN:
+			id = paket.readInt();
+			igrači.put(id, new Igrač(id, new Sfera(new Color(paket.readInt()),
+					paket.readFloat(), paket.readFloat(), paket.readFloat(), false), paket.readUTF()));
+			// System.err.println("DEBUG: Spojen igrač [" + id + "]! Broj igrača: [" + igrači.size() + "]");
+			break;
+		case IGRAČ_ODSPOJEN:
+			id = paket.readInt();
+			igrači.remove(id);
+			// System.err.println("DEBUG: Odspojen igrač [" + id + "]! Broj igrača: [" + igrači.size() + "]");
+			break;
+		}
 	}
 
-	/** Zove se kada je primljen paket. Izvedene klase mogu procesirati dobiveni paket. */
-	public abstract void onPrimljenPaket(DataInputStream paket) throws IOException;
+	public Loptica getLoptica() {
+		return loptica;
+	}
+
+	public Sfera getSfera() {
+		return sfera;
+	}
 
 }

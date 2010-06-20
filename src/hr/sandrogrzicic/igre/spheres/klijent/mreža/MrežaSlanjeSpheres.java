@@ -1,8 +1,8 @@
 package hr.sandrogrzicic.igre.spheres.klijent.mreža;
 
+import hr.sandrogrzicic.igre.klijent.AbstractKlijent;
 import hr.sandrogrzicic.igre.spheres.Akcije;
 import hr.sandrogrzicic.igre.spheres.klijent.Klijent;
-import hr.sandrogrzicic.igre.spheres.klijent.KlijentSpheres;
 import hr.sandrogrzicic.igre.spheres.objekti.Sfera;
 import hr.sandrogrzicic.igre.utility.UDP;
 
@@ -12,12 +12,12 @@ import java.io.IOException;
 
 
 public class MrežaSlanjeSpheres extends MrežaSlanje {
-	protected KlijentSpheres klijentSpheres;
+	protected Klijent klijentSpheres;
 	private final Sfera sfera;
 
-	public MrežaSlanjeSpheres(final Klijent klijent, final UDP udp) {
+	public MrežaSlanjeSpheres(final AbstractKlijent klijent, final UDP udp) {
 		super(klijent, udp);
-		this.klijentSpheres = (KlijentSpheres) klijent;
+		this.klijentSpheres = (Klijent) klijent;
 		this.sfera = klijentSpheres.getSfera();
 	}
 

@@ -1,5 +1,6 @@
 package hr.sandrogrzicic.igre.spheres.server;
 
+import hr.sandrogrzicic.igre.server.AbstractIgrač;
 import hr.sandrogrzicic.igre.spheres.Akcije;
 import hr.sandrogrzicic.igre.utility.UDP;
 
@@ -8,15 +9,14 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-class ServerIgračSlanjeRijetko extends Thread {
-	private final ServerIgrač igrač;
+class IgračSlanjeRijetko extends Thread {
+	private final Igrač igrač;
 	private boolean igračSpojen = true;
 	private final UDP udp;
-	private final List<ServerIgrač> igrači;
+	private final List<AbstractIgrač> igrači;
 
-	public ServerIgračSlanjeRijetko(final ServerIgrač igrač, final UDP udp, final List<ServerIgrač> igrači) {
-
-		this.igrač = igrač;
+	public IgračSlanjeRijetko(final AbstractIgrač igrač, final UDP udp, final List<AbstractIgrač> igrači) {
+		this.igrač = (Igrač) igrač;
 		this.udp = udp;
 		this.igrači = igrači;
 	}
@@ -34,8 +34,8 @@ class ServerIgračSlanjeRijetko extends Thread {
 				pošaljiNiskoPrioritetnePodatke();
 
 				if (Math.random() > 0.999) {
-					System.out.println(("% ID: #[" + igrač.getID() + "] recv: " + udp.getUkupnoPrimljeno() / 1024) + " - sent: " +
-							(udp.getUkupnoPoslano() / 1024));
+					System.out.println(("% ID: #[" + igrač.getID() + "] recv: " + udp.getUkupnoPrimljeno() / 1024) + "KB - sent: " +
+							(udp.getUkupnoPoslano() / 1024) + "KB");
 				}
 			} catch (final IOException e) {
 				igrač.odspojen();
@@ -64,7 +64,9 @@ class ServerIgračSlanjeRijetko extends Thread {
 		out.writeLong(igrač.getBodovi());
 
 		// pošalji lokacije sferi
-		for (final ServerIgrač ig : igrači) {
+		for (final AbstractIgrač igračAbstract : igrači) {
+			final Igrač ig = (Igrač) igračAbstract;
+
 			if (ig != igrač) {
 				out.writeInt(ig.getID());
 				out.writeFloat((float) ig.getSfera().getX());

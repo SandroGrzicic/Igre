@@ -1,4 +1,4 @@
-package hr.sandrogrzicic.igre.spheres.server;
+package hr.sandrogrzicic.igre.server;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -8,17 +8,17 @@ import java.net.SocketException;
 import java.util.Arrays;
 import java.util.HashMap;
 
-public class ServerListener implements Runnable {
-	private static final byte[] CONNECTION_STRING = "Bok!".getBytes();
+public abstract class AbstractListener implements Runnable {
+	protected byte[] CONNECTION_STRING = "Bok!".getBytes();
 
 	private final HashMap<InetAddress, Short> adrese = new HashMap<InetAddress, Short>();
 
 	private DatagramSocket socket;
-	private final Server server;
-	private final int port;
+	protected AbstractServer server;
+	protected int port;
 
 	/** Inicijalizira ovaj ServerListener. */
-	public ServerListener(final Server server, final int port) {
+	public AbstractListener(final AbstractServer server, final int port) {
 		this.server = server;
 		this.port = port;
 	}
@@ -28,13 +28,13 @@ public class ServerListener implements Runnable {
 	public void run() {
 		int brojIgračaZadnjeg = 0;
 
-		while (server.getBrojIgrača() < Server.SERVER_MAX_IGRAČA) {
+		while (server.getBrojIgrača() < AbstractServer.SERVER_MAX_IGRAČA) {
 			try {
 				final DatagramPacket paket = new DatagramPacket(new byte[4], 4);
 				socket.receive(paket);
 
 				final InetAddress adresa = paket.getAddress();
-				if (adrese.containsKey(adresa) && (adrese.get(adresa).compareTo(Server.MAKSIMALAN_BROJ_KLONOVA) >= 0)) {
+				if (adrese.containsKey(adresa) && (adrese.get(adresa).compareTo(AbstractServer.MAKSIMALAN_BROJ_KLONOVA) >= 0)) {
 					// dosegnut maksimalan broj konekcija s jednog IPa
 					continue;
 				}
@@ -47,18 +47,17 @@ public class ServerListener implements Runnable {
 					continue;
 				}
 
-				final ServerIgrač igrač = new ServerIgrač(socket, paket, server, brojIgračaZadnjeg);
+				kreirajIgrača(socket, paket, brojIgračaZadnjeg);
 
 				brojIgračaZadnjeg++;
-
-				igrač.setDaemon(true);
-				igrač.start();
 
 			} catch (final IOException e) {
 				e.printStackTrace();
 			}
 		}
 	}
+
+	protected abstract void kreirajIgrača(DatagramSocket socketIgrača, DatagramPacket paket, int igračID);
 
 	public void klijentOdspojen(final InetAddress adresa) {
 		adrese.put(adresa, Short.valueOf((short) (adrese.get(adresa) - 1)));

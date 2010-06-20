@@ -107,7 +107,7 @@ public class UDP {
 	}
 
 	/**
-	 * Pronalazi prvi slobodni port te binda UDP socket na njega.
+	 * Pronalazi prvi slobodni port unutar zadanog raspona te binda UDP socket na njega.
 	 * 
 	 * @param port
 	 *            nulti port koji smijemo koristiti (prvi port = serverPort + 1)
@@ -121,7 +121,7 @@ public class UDP {
 		DatagramSocket socketNovi = null;
 		while ((socketNovi == null) && (port < portMax)) {
 			try {
-				port++;
+				++port;
 				socketNovi = new DatagramSocket(port);
 			} catch (final SocketException ignorable) {}
 		}

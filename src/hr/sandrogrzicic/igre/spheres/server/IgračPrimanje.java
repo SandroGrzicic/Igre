@@ -1,6 +1,7 @@
 package hr.sandrogrzicic.igre.spheres.server;
 
 import hr.sandrogrzicic.igre.exceptions.NeočekivanaAkcijaException;
+import hr.sandrogrzicic.igre.server.AbstractIgrač;
 import hr.sandrogrzicic.igre.spheres.Akcije;
 import hr.sandrogrzicic.igre.spheres.objekti.Sfera;
 import hr.sandrogrzicic.igre.utility.UDP;
@@ -10,18 +11,18 @@ import java.io.IOException;
 import java.util.Calendar;
 
 
-class ServerIgračPrimanje extends Thread {
-	private final ServerIgrač igrač;
+class IgračPrimanje extends Thread {
+	private final Igrač igrač;
 	private boolean igračSpojen = true;
-	private final UDP udp;
+	private final UDP veza;
 	private final Sfera sfera;
 
-	public ServerIgračPrimanje(final ServerIgrač igrač, final UDP udp, final Sfera sfera) {
+	public IgračPrimanje(final AbstractIgrač igrač, final UDP veza, final Sfera sfera) {
 		this.setDaemon(true);
 		this.setName(getClass().getCanonicalName() + igrač);
 
-		this.igrač = igrač;
-		this.udp = udp;
+		this.igrač = (Igrač) igrač;
+		this.veza = veza;
 		this.sfera = sfera;
 	}
 
@@ -41,7 +42,7 @@ class ServerIgračPrimanje extends Thread {
 
 	/** Prima podatke od klijenta. Blokira izvođenje dok se podaci ne prime. */
 	private void primiPodatke() throws IOException {
-		final DataInputStream in = udp.primi();
+		final DataInputStream in = veza.primi();
 
 		final Akcije akcija = Akcije.get(in.readByte());
 		switch (akcija) {

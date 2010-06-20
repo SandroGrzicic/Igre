@@ -1,5 +1,6 @@
 package hr.sandrogrzicic.igre.spheres.server;
 
+import hr.sandrogrzicic.igre.server.AbstractIgrač;
 import hr.sandrogrzicic.igre.spheres.Akcije;
 import hr.sandrogrzicic.igre.spheres.objekti.Loptica;
 import hr.sandrogrzicic.igre.spheres.objekti.Sfera;
@@ -10,23 +11,23 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 
-class ServerIgračSlanjeČesto extends Thread {
+class IgračSlanjeČesto extends Thread {
 	private boolean igračSpojen = true;
 	private final UDP udp;
 	private final Loptica loptica;
 	private final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(17);
 	private final DataOutputStream out = new DataOutputStream(outBAOS);
-	private final ServerIgrač igrač;
+	private final AbstractIgrač igrač;
 	private final Sfera sfera;
 
-	public ServerIgračSlanjeČesto(final ServerIgrač igrač, final UDP udp, final Loptica loptica) {
+	public IgračSlanjeČesto(final AbstractIgrač igrač, final UDP veza, final Loptica loptica) {
 		this.setDaemon(true);
 		this.setName(getClass().getCanonicalName() + igrač);
 
 		this.igrač = igrač;
-		this.udp = udp;
+		this.udp = veza;
 		this.loptica = loptica;
-		this.sfera = igrač.getSfera();
+		this.sfera = ((Igrač) igrač).getSfera();
 	}
 
 	@Override

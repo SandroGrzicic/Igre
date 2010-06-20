@@ -1,12 +1,15 @@
 package hr.sandrogrzicic.igre.spheres.server;
 
+import hr.sandrogrzicic.igre.poruke.Sudar;
+import hr.sandrogrzicic.igre.server.AbstractIgra;
+import hr.sandrogrzicic.igre.server.AbstractIgrač;
 import hr.sandrogrzicic.igre.spheres.objekti.Loptica;
 import hr.sandrogrzicic.igre.spheres.objekti.Sfera;
 
 import java.util.List;
 
 
-public class ServerIgra implements Runnable {
+public class Igra extends AbstractIgra {
 	// todo: prebaciti u neki config
 	private static final double BODOVI_SUDAR = 131072;
 	private static final double BODOVI_ZID = 4194304;
@@ -18,42 +21,33 @@ public class ServerIgra implements Runnable {
 	private static final double FAKTOR_ODBIJANJE_ZID = 0.8;
 	private static final double SUDAR_FAKTOR_ODBIJANJA = 1.8;
 	private static final double SUDAR_JAČINA_MINIMALNA = 0.000125;
-	private static final double SFERA_R_BRZINA_POVEĆAVANJA = 0.99994;
-	private static final double SFERA_R_BRZINA_SMANJIVANJA = 1.000025;
+	private static final double SFERA_R_BRZINA_SMANJIVANJA = 0.99994;
+	private static final double SFERA_R_BRZINA_POVEĆAVANJA = 1.000025;
 	private static final double LOPTICA_POČETNI_POLOŽAJ_X = 0.5;
 
-	private boolean igraPokrenuta;
 	private final Server server;
 	private final Loptica loptica = new Loptica();
+
 	/** Minimalni radius sfere. */
-	private double radiusMin;
+	private final double radiusMin = 0.03125;
 	/** Maksimalni radius sfere. */
-	private double radiusMax;
+	private final double radiusMax = 0.125;
 
 	private double bodovi;
-	private final List<ServerIgrač> igrači;
 
-	public ServerIgra(final Server server, final List<ServerIgrač> igrači) {
+	public Igra(final Server server, final List<AbstractIgrač> igrači) {
 		this.server = server;
 		this.igrači = igrači;
 	}
 
 	@Override
 	public void run() {
-		if (igraPokrenuta) {
-			pomakniLopticu();
-			osvježiRadiuseSfera();
-		} else {
-			igraInit();
-		}
+		pomakniLopticu();
+		osvježiRadiuseSfera();
 	}
 
-	/** Inicijalizacija parametara igre pri prvom pokretanju ili nastavljanju pauzirane igre. */
-	void igraInit() {
-		igrači.clear();
-		radiusMin = 0.03125;
-		radiusMax = 0.125;
-
+	@Override
+	public void pokreni() {
 		if (bodovi < 0) {
 			server.bodovi(Integer.MIN_VALUE);
 		}
@@ -65,15 +59,19 @@ public class ServerIgra implements Runnable {
 		}
 	}
 
+	@Override
+	public void zaustavi() {
+	}
+
 	/** Računa nove radiuse sfera s obzirom na trenutnu aktivnost sfere. */
 	private void osvježiRadiuseSfera() {
 		synchronized (igrači) {
-			for (final ServerIgrač igrač : igrači) {
-				final Sfera sfera = igrač.getSfera();
+			for (final AbstractIgrač igrač : igrači) {
+				final Sfera sfera = ((Igrač) igrač).getSfera();
 				if (sfera.getA() && (sfera.getR() > radiusMin)) {
-					sfera.setR(sfera.getR() * SFERA_R_BRZINA_POVEĆAVANJA);
-				} else if (sfera.getR() < radiusMax) {
 					sfera.setR(sfera.getR() * SFERA_R_BRZINA_SMANJIVANJA);
+				} else if (!sfera.getA() && (sfera.getR() < radiusMax)) {
+					sfera.setR(sfera.getR() * SFERA_R_BRZINA_POVEĆAVANJA);
 				}
 			}
 		}
@@ -95,7 +93,8 @@ public class ServerIgra implements Runnable {
 		// sudari loptica-sfere
 		if (y > 0.1) {
 			synchronized (this) {
-				for (final ServerIgrač igrač : igrači) {
+				for (final AbstractIgrač igračAbstract : igrači) {
+					final Igrač igrač = (Igrač) igračAbstract;
 					final Sfera sfera = igrač.getSfera().clone();
 
 					/** udaljenost ruba prve sfere do ruba druge sfere */
@@ -111,16 +110,16 @@ public class ServerIgra implements Runnable {
 						final float nX = (float) (sfera.getX() - x);
 						final float nY = (float) (sfera.getY() - y);
 						// dot product normale i brzine loptice podijeljeno sa dot productom normale sa sobom
-						final double vNnN = ((nX * (float) loptica.getXv()) + (nY * (float) loptica.getYv())) / ((nX * nX) + (nY * nY));
-						if (vNnN > 0) {
+						final double jačina = ((nX * (float) loptica.getXv()) + (nY * (float) loptica.getYv())) / ((nX * nX) + (nY * nY));
+						if (jačina > 0) {
 							final double vM = SUDAR_FAKTOR_ODBIJANJA * Math.cbrt(radiusMax / sfera.getR());
 							// System.out.println(radius + " " + sfera.getR());
-							xv -= (vM * vNnN * nX);
-							yv -= (vM * vNnN * nY);
+							xv -= (vM * jačina * nX);
+							yv -= (vM * jačina * nY);
 
-							if (vNnN > SUDAR_JAČINA_MINIMALNA) {
-								bodovi(BODOVI_SUDAR * vNnN);
-								server.sudar(igrač.getID(), x, y, vNnN);
+							if (jačina > SUDAR_JAČINA_MINIMALNA) {
+								bodovi(BODOVI_SUDAR * jačina);
+								server.poruka(new Sudar(igrač, x, y, jačina));
 							}
 						}
 					}
@@ -183,15 +182,6 @@ public class ServerIgra implements Runnable {
 		server.bodovi(bodovi);
 	}
 
-
-	public void setIgraPokrenuta(final boolean igraPokrenuta) {
-		this.igraPokrenuta = igraPokrenuta;
-	}
-
-	public boolean isIgraPokrenuta() {
-		return igraPokrenuta;
-	}
-
 	public Loptica getLoptica() {
 		return loptica;
 	}
@@ -199,5 +189,7 @@ public class ServerIgra implements Runnable {
 	public double getRadius() {
 		return radiusMax;
 	}
+
+
 
 }

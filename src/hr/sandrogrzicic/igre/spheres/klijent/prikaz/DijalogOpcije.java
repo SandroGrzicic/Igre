@@ -1,6 +1,6 @@
 package hr.sandrogrzicic.igre.spheres.klijent.prikaz;
 
-import hr.sandrogrzicic.igre.spheres.klijent.Klijent;
+import hr.sandrogrzicic.igre.klijent.AbstractKlijent;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -130,8 +130,8 @@ class DijalogOpcije extends JDialog {
 		if ((igračIme == null) || (igračIme.trim().length() == 0)) {
 			igračIme = Integer.toString(1000 + (int) (9000 * Math.random()));
 		}
-		if (igračIme.length() > Klijent.IME_MAX_LENGTH) {
-			igračIme = igračIme.substring(0, Klijent.IME_MAX_LENGTH);
+		if (igračIme.length() > AbstractKlijent.IME_MAX_LENGTH) {
+			igračIme = igračIme.substring(0, AbstractKlijent.IME_MAX_LENGTH);
 		}
 
 		boja = bojaChooser.getColor();

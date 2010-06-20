@@ -21,7 +21,7 @@ public class Sudar extends Efekt {
 
 	@Override
 	public boolean iscrtaj(final Graphics2D g) {
-		iteracija++;
+		++iteracija;
 
 		if (iteracija > jačina) {
 			return false;

@@ -1,7 +1,7 @@
 package hr.sandrogrzicic.igre.spheres.klijent.mreža;
 
+import hr.sandrogrzicic.igre.klijent.AbstractKlijent;
 import hr.sandrogrzicic.igre.spheres.Akcije;
-import hr.sandrogrzicic.igre.spheres.klijent.Klijent;
 import hr.sandrogrzicic.igre.utility.UDP;
 
 import java.io.ByteArrayOutputStream;
@@ -10,14 +10,14 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 
 
-public class MrežaSlanje extends Thread {
+public abstract class MrežaSlanje extends Thread {
 	protected static final short DEFAULT_KAŠNJENJE = 10;
-	protected final Klijent klijent;
+	protected final AbstractKlijent klijent;
 	protected final UDP udp;
 	protected int kašnjenje;
 	private boolean igraAktivna;
 
-	public MrežaSlanje(final Klijent klijent, final UDP udp) {
+	public MrežaSlanje(final AbstractKlijent klijent, final UDP udp) {
 		this.setName(getClass().getCanonicalName());
 		this.setDaemon(true);
 		this.klijent = klijent;
@@ -64,12 +64,11 @@ public class MrežaSlanje extends Thread {
 	}
 
 	/**
-	 * Defaultna implementacija ne radi ništa.
+	 * Šalje podatke serveru.
 	 * 
 	 * @throws IOException
 	 */
-	protected void mrežaPošalji() throws IOException {
-	}
+	protected abstract void mrežaPošalji() throws IOException;
 
 	/** Zove se kada igrač izađe iz igre. */
 	public void klijentIzašao() {
@@ -77,7 +76,7 @@ public class MrežaSlanje extends Thread {
 		final DataOutputStream out = new DataOutputStream(outBAOS);
 		try {
 			out.writeByte(Akcije.IGRAČ_IZAŠAO.id());
-			udp.pošalji(outBAOS); // baca NullPointerException ako socket nije spojen
+			udp.pošalji(outBAOS); // baca (ignorable) NullPointerException ako socket nije spojen
 		} catch (final Exception ignorable) {}
 	}
 
