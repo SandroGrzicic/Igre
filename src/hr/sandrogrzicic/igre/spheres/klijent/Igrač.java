@@ -42,8 +42,8 @@ public class Igrač {
 		this.sfera = sfera;
 	}
 
-	public void setID(final int iD) {
-		ID = iD;
+	public void setID(final int ID) {
+		this.ID = ID;
 	}
 
 	@Override

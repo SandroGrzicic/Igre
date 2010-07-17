@@ -27,7 +27,7 @@ public class MrežaPrimanje extends Thread {
 
 			while (!igraAktivna) {
 				try {
-					Thread.sleep(100);
+					Thread.sleep(10);
 					if (klijent.isIgraAktivna()) {
 						igraAktivna = true;
 					}
@@ -42,6 +42,7 @@ public class MrežaPrimanje extends Thread {
 			} catch (final SocketTimeoutException ste) {
 				klijent.izgubljenaVeza();
 			} catch (final IOException e) {
+				System.err.println("Neočekivani nekritični exception (prijaviti kao bug): ");
 				e.printStackTrace();
 			}
 		}

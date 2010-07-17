@@ -70,17 +70,10 @@ public abstract class AbstractServer {
 		igraPokrenuta = true;
 	}
 
-	/** Zaustavlja izvršavanje igre nakon što se izvrši trenutna iteracija. */
-	protected void zaustaviIgru() {
+	/** Zaustavlja izvršavanje igre nakon što se izvrši trenutna iteracija ili odmah. */
+	protected void zaustaviIgru(final boolean odmah) {
 		serverIgra.zaustavi();
-		serverIgraFuture.cancel(false);
-		igraPokrenuta = false;
-	}
-
-	/** Zaustavlja izvršavanje igre odmah. */
-	protected void zaustaviIgruOdmah() {
-		serverIgra.zaustavi();
-		serverIgraFuture.cancel(true);
+		serverIgraFuture.cancel(odmah);
 		igraPokrenuta = false;
 	}
 
@@ -89,12 +82,12 @@ public abstract class AbstractServer {
 	 */
 	public void poruka(final Poruka poruka) {
 		System.out.println("* " + poruka);
-		final int izvorID = poruka.getIzvor().getID();
 		for (final AbstractIgrač igrač : igrači) {
-			if (igrač.getID() == izvorID) {
-				continue;
+			try {
+				igrač.poruka(poruka);
+			} catch (final IOException io) {
+				igračOdspojen(igrač);
 			}
-			igrač.poruka(poruka);
 		}
 	}
 
@@ -147,7 +140,7 @@ public abstract class AbstractServer {
 	/** Zaustavlja ili pokreće igru. */
 	synchronized public void setIgraPokrenuta(final boolean igraPokrenuta) {
 		if (this.igraPokrenuta && !igraPokrenuta) {
-			zaustaviIgru();
+			zaustaviIgru(false);
 			System.out.println("Igra zaustavljena!");
 		} else if (!this.igraPokrenuta && igraPokrenuta) {
 			pokreniIgru();

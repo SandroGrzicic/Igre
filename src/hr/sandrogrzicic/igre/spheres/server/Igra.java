@@ -19,7 +19,7 @@ public class Igra extends AbstractIgra {
 	private static final double GRAVITACIJA_KONSTANTNA = 0.000000000025 * Server.KAŠNJENJE_IGRA;
 	private static final double GRAVITACIJA_GORE = 0.0000001 * Server.KAŠNJENJE_IGRA;
 	private static final double FAKTOR_ODBIJANJE_ZID = 0.8;
-	private static final double SUDAR_FAKTOR_ODBIJANJA = 1.8;
+	private static final double SUDAR_FAKTOR_ODBIJANJA = 1.7;
 	private static final double SUDAR_JAČINA_MINIMALNA = 0.000125;
 	private static final double SFERA_R_BRZINA_SMANJIVANJA = 0.99994;
 	private static final double SFERA_R_BRZINA_POVEĆAVANJA = 1.000025;
@@ -29,9 +29,9 @@ public class Igra extends AbstractIgra {
 	private final Loptica loptica = new Loptica();
 
 	/** Minimalni radius sfere. */
-	private final double radiusMin = 0.03125;
+	private final double radiusMin = 0.04;
 	/** Maksimalni radius sfere. */
-	private final double radiusMax = 0.125;
+	private final double radiusMax = 0.1;
 
 	private double bodovi;
 
@@ -98,14 +98,12 @@ public class Igra extends AbstractIgra {
 					final Sfera sfera = igrač.getSfera().clone();
 
 					/** udaljenost ruba prve sfere do ruba druge sfere */
-					final double d = ((sfera.getX() - x) * (sfera.getX() - x) + (sfera.getY() - y) * (sfera.getY() - y)) -
-					(sfera.getR() + r) * (sfera.getR() + r);
+					final double d = ((sfera.getX() - x) * (sfera.getX() - x) + (sfera.getY() - y) * (sfera.getY() - y)) - (sfera.getR() + r) *
+					(sfera.getR() + r);
 					// final float vLimit = 512 * (float) Math.sqrt(xv * xv + yv * yv);
-
 					// if (d - (vLimit > 512 ? vLimit : 512) < 0) {
 
 					if (d < 0.001) {
-
 						// normala
 						final float nX = (float) (sfera.getX() - x);
 						final float nY = (float) (sfera.getY() - y);
@@ -113,10 +111,8 @@ public class Igra extends AbstractIgra {
 						final double jačina = ((nX * (float) loptica.getXv()) + (nY * (float) loptica.getYv())) / ((nX * nX) + (nY * nY));
 						if (jačina > 0) {
 							final double vM = SUDAR_FAKTOR_ODBIJANJA * Math.cbrt(radiusMax / sfera.getR());
-							// System.out.println(radius + " " + sfera.getR());
 							xv -= (vM * jačina * nX);
 							yv -= (vM * jačina * nY);
-
 							if (jačina > SUDAR_JAČINA_MINIMALNA) {
 								bodovi(BODOVI_SUDAR * jačina);
 								server.poruka(new Sudar(igrač, x, y, jačina));
@@ -149,8 +145,8 @@ public class Igra extends AbstractIgra {
 			xv = -xv * FAKTOR_ODBIJANJE_ZID;
 			x = 1 - r;
 		}
-		if (y <= r) {
-			// gore; *jako često*; treba biti brzo
+		if (y <= 1 - r) {
+			// ekran ili iznad ekrana; *jako često*; treba biti brzo
 			bodovi(BODOVI_FAKTOR_X * xv + Math.abs(BODOVI_FAKTOR_Y * yv));
 			// y = r;
 		} else if (y >= 1 - r) {

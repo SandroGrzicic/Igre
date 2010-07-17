@@ -1,9 +1,9 @@
 package hr.sandrogrzicic.igre.spheres;
 
-
 /**
+ * Akcije koje izmjenjuju server i klijenti.
+ * 
  * @author Sandro Gržičić
- *
  */
 public enum Akcije {
 	POMAK_LOPTICE(0),
@@ -20,10 +20,8 @@ public enum Akcije {
 	private byte id;
 
 	Akcije(final int akcijaID) {
-
 		this.id = (byte) akcijaID;
 	}
-
 
 	public byte id() {
 		return id;
@@ -35,4 +33,5 @@ public enum Akcije {
 	public static Akcije get(final byte identifikator) {
 		return values()[identifikator];
 	}
+
 }

@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  * @author Sandro Gržičić
  */
 public class Server extends AbstractServer {
-	public static final int VERZIJA = 22;
+	public static final int VERZIJA = 23;
 	static final long KAŠNJENJE_MREŽA_RIJETKO = 100;
 	static final long KAŠNJENJE_MREŽA_ČESTO = 25;
 	static final long KAŠNJENJE_IGRA = 150;
@@ -34,7 +34,6 @@ public class Server extends AbstractServer {
 	@Override
 	protected AbstractIgra inicijalizirajIgru() {
 		return new Igra(this, igrači);
-
 	}
 
 	@Override

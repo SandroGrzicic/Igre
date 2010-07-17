@@ -34,7 +34,7 @@ public abstract class AbstractIgrač extends Thread {
 	}
 
 	/** Šalje poruku klijentu. */
-	abstract protected void poruka(final Poruka poruka);
+	abstract protected void poruka(final Poruka poruka) throws IOException;
 
 	/** Novi igrač je spojen. */
 	abstract protected void igračSpojen(final AbstractIgrač spojen) throws IOException;

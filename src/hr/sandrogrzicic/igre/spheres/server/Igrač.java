@@ -17,7 +17,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
 
-class Igrač extends AbstractIgrač {
+public class Igrač extends AbstractIgrač {
 
 	protected static int PAKET_MAX_VELIČINA = 1024;
 	protected static int SOCKET_TIMEOUT = 5000;
@@ -36,54 +36,11 @@ class Igrač extends AbstractIgrač {
 	}
 
 	/**
-	 * Šalje naredbu kojom se forsira stanje aktivnosti sfere igrača.
+	 * Šalje poruku ovom igraču.
 	 */
-	void postaviAktivnostSfere(final boolean aktivnost) throws IOException {
-		sfera.setA(aktivnost);
-
-		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(5);
-		final DataOutputStream out = new DataOutputStream(outBAOS);
-
-		out.writeByte(Akcije.SFERA_AKTIVNA.id());
-		out.writeBoolean(false);
-		veza.pošalji(outBAOS);
-	}
-
-	/**
-	 * Šalje informaciju o sudaru loptice i sfere.
-	 * 
-	 * @param id
-	 *            id igrača
-	 * @param x
-	 *            koordinata sudara
-	 * @param y
-	 *            koordinata sudara
-	 * @param jačina
-	 */
-	void sudar(final int id, final double x, final double y, final double jačina) throws IOException {
-		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(9);
-		final DataOutputStream out = new DataOutputStream(outBAOS);
-
-		out.writeByte(Akcije.SUDAR.id());
-		out.writeInt(id);
-		out.writeDouble(x);
-		out.writeDouble(y);
-		out.writeDouble(jačina);
-		veza.pošalji(outBAOS);
-	}
-
-	/**
-	 * Šalje igraču novu chat poruku koju je poslao drugi igrač.
-	 */
-	public void chatPoruka(final int id, final long vrijemeUNIX, final String poruka) throws IOException {
-		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(10 + 3 * poruka.length());
-		final DataOutputStream out = new DataOutputStream(outBAOS);
-
-		out.writeByte(Akcije.CHAT_PORUKA.id());
-		out.writeInt(id);
-		out.writeLong(vrijemeUNIX);
-		out.writeUTF(poruka);
-		veza.pošalji(outBAOS);
+	@Override
+	protected void poruka(final Poruka poruka) throws IOException {
+		veza.pošalji(poruka.getBAOS());
 	}
 
 	/**
@@ -208,12 +165,6 @@ class Igrač extends AbstractIgrač {
 	@Override
 	public String toString() {
 		return "[" + igračID + "] [" + ime + "]";
-	}
-
-	@Override
-	protected void poruka(final Poruka poruka) {
-		// TODO Auto-generated method stub
-
 	}
 
 

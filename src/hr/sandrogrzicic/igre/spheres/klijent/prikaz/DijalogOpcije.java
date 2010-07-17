@@ -1,6 +1,6 @@
 package hr.sandrogrzicic.igre.spheres.klijent.prikaz;
 
-import hr.sandrogrzicic.igre.klijent.AbstractKlijent;
+import hr.sandrogrzicic.igre.spheres.klijent.Klijent;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -19,11 +19,20 @@ import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 
-
+/**
+ * Modalni dijalog sa opcijama. Nakon što korisnik potvrdi unos, dijalog se zatvara te se kontrola vraća
+ * pozivajućoj metodi.
+ * 
+ * @author Sandro Gržičić
+ */
 class DijalogOpcije extends JDialog {
 	private static final long serialVersionUID = -6655441278930411136L;
+	private final JTextField serverHostname;
+	private final JFormattedTextField serverPort;
 	private final JTextField imeText;
 	private final JColorChooser bojaChooser;
+	private String hostname;
+	private int port;
 	private String igračIme;
 	private Color boja;
 	private Dimension rezolucija;
@@ -37,7 +46,32 @@ class DijalogOpcije extends JDialog {
 		setDefaultLookAndFeelDecorated(true);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
+		final NumberFormat integerNumberFormat = NumberFormat.getIntegerInstance();
+		integerNumberFormat.setGroupingUsed(false);
+
 		final Box komponente = new Box(BoxLayout.Y_AXIS);
+
+		// server
+		final Box serverBox = new Box(BoxLayout.X_AXIS);
+		final JLabel serverLabel = new JLabel("Server: ");
+		serverLabel.setPreferredSize(new Dimension(64, serverLabel.getHeight()));
+		serverHostname = new JTextField(40);
+		serverHostname.setText(Klijent.DEFAULT_SERVER_HOSTNAME);
+		serverHostname.setToolTipText("Hostname servera");
+		serverPort = new JFormattedTextField(integerNumberFormat);
+		serverPort.setColumns(5);
+		serverPort.setText(String.valueOf(Klijent.DEFAULT_SERVER_PORT));
+		serverPort.setToolTipText("Port servera");
+
+		serverBox.add(Box.createHorizontalStrut(8));
+		serverBox.add(serverLabel);
+		serverBox.add(serverHostname);
+		serverBox.add(Box.createGlue());
+		serverBox.add(serverPort);
+
+		komponente.add(serverBox);
+
+		// ime
 		final Box imeBox = new Box(BoxLayout.X_AXIS);
 		final JLabel imeLabel = new JLabel("Ime: ");
 		imeText = new JTextField(32);
@@ -48,6 +82,7 @@ class DijalogOpcije extends JDialog {
 		imeBox.add(Box.createGlue());
 		komponente.add(imeBox);
 
+		// boja sfere
 		final Box bojaSfereBox = new Box(BoxLayout.X_AXIS);
 		final JLabel bojaSfereLabel = new JLabel("Boja sfere: ");
 		bojaChooser = new JColorChooser(Boja.vratiRandomBoju().getBoja());
@@ -59,14 +94,16 @@ class DijalogOpcije extends JDialog {
 		bojaSfereBox.add(bojaChooser);
 		komponente.add(bojaSfereBox);
 
+		// rezolucija
 		final Box rezolucijaBox = new Box(BoxLayout.X_AXIS);
 		final JLabel rezolucijaLabel = new JLabel("Rezolucija: ");
 		rezolucijaCombo = new JComboBox(Rezolucija.values());
-		rezolucijaCombo.setSelectedIndex(1);
+		rezolucijaCombo.setSelectedIndex(3);
 		rezolucijaCombo.setMaximumSize(rezolucijaCombo.getPreferredSize());
-		rezolucijaCustom = new JFormattedTextField(NumberFormat.getIntegerInstance());
+		rezolucijaCustom = new JFormattedTextField(integerNumberFormat);
 		rezolucijaCustom.setColumns(5);
 		rezolucijaCustom.setMaximumSize(rezolucijaCustom.getPreferredSize());
+		rezolucijaCustom.setToolTipText("Po želji unesite ručno odabranu rezoluciju");
 		// rezCustomŠirina = new JFormattedTextField(NumberFormat.getIntegerInstance());
 		// rezCustomVisina = new JFormattedTextField(NumberFormat.getIntegerInstance());
 		// rezCustomŠirina.setColumns(5);
@@ -116,6 +153,7 @@ class DijalogOpcije extends JDialog {
 		add(komponente);
 
 		rootPane.setDefaultButton(OK);
+
 		pack();
 		setResizable(false);
 		setLocationRelativeTo(null);
@@ -126,12 +164,29 @@ class DijalogOpcije extends JDialog {
 	 * Procesira parametre koje je korisnik unio. Zove dispose() ukoliko je procesiranje uspješno.
 	 */
 	protected void procesirajUlaz() {
+		hostname = serverHostname.getText();
+		if (hostname.length() < 2) {
+			serverHostname.setBackground(Color.RED);
+			return;
+		}
+
+		try {
+			port = Integer.parseInt(serverPort.getText());
+		} catch (final NumberFormatException nfe) {
+			serverPort.setBackground(Color.RED);
+			return;
+		}
+		if ((port < 0) || (port > 65535)) {
+			serverPort.setBackground(Color.RED);
+			return;
+		}
+
 		igračIme = imeText.getText();
 		if ((igračIme == null) || (igračIme.trim().length() == 0)) {
 			igračIme = Integer.toString(1000 + (int) (9000 * Math.random()));
 		}
-		if (igračIme.length() > AbstractKlijent.IME_MAX_LENGTH) {
-			igračIme = igračIme.substring(0, AbstractKlijent.IME_MAX_LENGTH);
+		if (igračIme.length() > Klijent.IME_MAX_LENGTH) {
+			igračIme = igračIme.substring(0, Klijent.IME_MAX_LENGTH);
 		}
 
 		boja = bojaChooser.getColor();
@@ -167,8 +222,9 @@ class DijalogOpcije extends JDialog {
 	@Override
 	protected void processWindowEvent(final WindowEvent e) {
 		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
-			procesirajUlaz();
+			System.exit(0);
 		}
+
 	}
 
 	public String getIme() {
@@ -183,4 +239,11 @@ class DijalogOpcije extends JDialog {
 		return rezolucija;
 	}
 
+	public String getServerHostname() {
+		return hostname;
+	}
+
+	public int getServerPort() {
+		return port;
+	}
 }

@@ -4,6 +4,7 @@ import hr.sandrogrzicic.igre.klijent.AbstractKlijent;
 import hr.sandrogrzicic.igre.spheres.Akcije;
 import hr.sandrogrzicic.igre.spheres.klijent.Igrač;
 import hr.sandrogrzicic.igre.spheres.klijent.Klijent;
+import hr.sandrogrzicic.igre.spheres.klijent.Postavke;
 import hr.sandrogrzicic.igre.spheres.klijent.efekti.Efekt;
 import hr.sandrogrzicic.igre.spheres.klijent.efekti.Sudar;
 import hr.sandrogrzicic.igre.spheres.objekti.Loptica;
@@ -43,9 +44,8 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 
-
 /**
- * JFrame implementacija KlijentPrikaza. Koristi Swing (JFrame container) te Canvas/Java2D za iscrtavanje.
+ * JFrame implementacija Prikaza. Koristi Swing (JFrame container) te Canvas/Java2D za iscrtavanje.
  * 
  * @author Sandro Gržičić
  */
@@ -59,7 +59,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	private static final Color BOJA_VISINA_4 = new Color(255, 0, 0);
 	private static final Color BOJA_GORNJI_TEKST = new Color(64, 64, 64);
 	private static final Color BOJA_POZADINA = Color.BLACK;
-	private static final Color BOJA_POZADINA_VRH = new Color(32, 32, 32);
+	private static final Color BOJA_POZADINA_VRH = new Color(48, 48, 48);
 	private static final Color BOJA_BODOVI = Color.RED;
 	private static final Color BOJA_BODOVI_MAX = BOJA_BODOVI.darker();
 	private static final Color BOJA_BRZINA_LOPTICE = Color.YELLOW;
@@ -89,12 +89,6 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	private final int kašnjenje;
 	private final HashMap<Key, Object> renderingHints;
 	private final GraphicsConfiguration gConfig;
-
-	private int fps = 0;
-	private long fpsVrijemeNano;
-	private long fpsBrojač;
-	private final double[] fpsAvg = new double[16];
-	private int fpsAvgNext = 0;
 
 	final Klijent klijent;
 	private boolean igraAktivna;
@@ -136,6 +130,12 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	private boolean pritisnutGumbDesni;
 	private final Map<Color, Color> bojeCacheSvjetlije = new HashMap<Color, Color>();
 
+	private double fps = 0;
+	private long fpsVrijeme;
+	private long fpsBrojač;
+	private String fpsString = "0";
+
+
 	/**
 	 * Kreira novi KlijentPrikaz u obliku Swing JFramea.
 	 */
@@ -149,13 +149,8 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		this.loptica = new Loptica(klijent.getLoptica().getR());
 		this.igrači = klijent.getIgrači();
 		this.efekti = new CopyOnWriteArrayList<Efekt>();
-		// this.efekti = new ArrayList<Efekt>();
 		this.chatBuffer = new char[255];
 		inicijalizacija = false;
-
-		// final Map<String, Object> argumenti = parsirajArgumente(args);
-		// this.igrač.setIme((String) argumenti.get("ime"));
-		// this.rezolucija = (Dimension) argumenti.get("res");
 
 		// default postavke
 		this.kašnjenje = 6;
@@ -177,7 +172,6 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		okvir.addKeyListener(this);
 		addKeyListener(this);
 
-		klijent.dodajPrikaz(this);
 	}
 
 	private Map<String, Object> parsirajArgumente(final String[] argumenti) {
@@ -218,7 +212,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		long vrijeme = System.currentTimeMillis();
 		long vrijemeSpavanja;
 		fpsBrojač = 0;
-		fpsVrijemeNano = System.nanoTime();
+		fpsVrijeme = System.nanoTime();
 
 		while (true) {
 			if (!igraAktivna) {
@@ -348,13 +342,13 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		// FPS brojač
 		g.setColor(Color.YELLOW);
 		g.setFont(FONT_DEFAULT);
-		g.drawString(Integer.toString(fps), širina - 32, 32);
+		g.drawString(fpsString, širina - 32, 32);
 
 		g.dispose();
 		bufferStrategy.show();
 	}
 
-	private final void iscrtajSferu(final Graphics2D g, final Sfera s, final String ime) {
+	private void iscrtajSferu(final Graphics2D g, final Sfera s, final String ime) {
 		g.setColor(Color.WHITE);
 		g.fillOval(zaokruži(s.getX() - s.getR() - 1), zaokruži(s.getY() - s.getR() - 1), zaokruži(2 * s.getR() + 2),
 				zaokruži(2 * s.getR() + 2));
@@ -369,7 +363,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		g.drawString(ime, zaokruži(s.getX() - 3.5 * ime.length()) + 4, zaokruži(s.getY() + 3));
 	}
 
-	private final void iscrtajChat(final Graphics2D g) {
+	private void iscrtajChat(final Graphics2D g) {
 		g.setFont(FONT_CHAT);
 
 		g.setColor(BOJA_CHAT_VLASTITI);
@@ -394,7 +388,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		}
 	}
 
-	private final String trenutnaVisinaLoptice() {
+	private String trenutnaVisinaLoptice() {
 		if (loptica.getY() > 0) {
 			return STRING_NULA;
 		}
@@ -406,7 +400,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 		return Integer.toString(visinaLoptice);
 	}
 
-	private final String trenutnaBrzinaLoptice() {
+	private String trenutnaBrzinaLoptice() {
 		final long brzina = Math.abs(Math.round(KONSTANTA_BRZINE * loptica.getYv()));
 		if (brzina > brzinaMax) {
 			brzinaMax = brzina;
@@ -416,23 +410,21 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	}
 
 	/** Vraća zaokruženi int. */
-	private final int zaokruži(final double broj) {
-		return (int) Math.round(broj);
+	private int zaokruži(final double broj) {
+		return (int) StrictMath.floor(broj + 0.5);
 	}
 
-	private final void izračunajFPS() {
-		fpsBrojač++;
-		if ((fpsBrojač & 15) == 15) {
-			fps = 0;
-			fpsAvg[fpsAvgNext++] = 1000000000 * ((double) fpsBrojač / (System.nanoTime() - fpsVrijemeNano));
-			for (final double fpsA : fpsAvg) {
-				fps += fpsA;
-			}
-			if (fpsAvgNext > (fpsAvg.length - 1)) {
-				fpsAvgNext = 0;
-			}
-			fps = fps >> 4;
+	private void izračunajFPS() {
+		++fpsBrojač;
+		final double sekunde = (System.nanoTime() - fpsVrijeme) / 1000000000.0;
+		fps = fpsBrojač / sekunde;
+
+		if (sekunde >= 3.0) {
+			fpsBrojač >>= 1;
+				fpsVrijeme += 1500000000.0;
 		}
+
+		fpsString = Integer.toString((int) fps);
 	}
 
 	public void setInit(final double radiusMax) {
@@ -446,7 +438,8 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 	/** Generira upitni dijalog koji služi za unos inicijalnih opcija. */
 	private void initOpcije() {
 		final DijalogOpcije opcije = new DijalogOpcije(this);
-
+		klijent.setPostavka(Postavke.SERVER_HOSTNAME, opcije.getServerHostname());
+		klijent.setPostavka(Postavke.SERVER_PORT, opcije.getServerPort());
 		igrač.setIme(opcije.getIme());
 		igrač.getSfera().setBoja(opcije.getBoja());
 		sfera.setBoja(opcije.getBoja());
@@ -628,7 +621,7 @@ public class PrikazSpheresJFrame extends JFrame implements PrikazSpheres, MouseL
 			switch (e.getKeyChar()) {
 			case KeyEvent.VK_ENTER:
 				if (chatBufferStr.trim().length() > 0) {
-					chatDodaj(new Poruka(timestamp(), PorukaTip.CHAT_VLASTITI, igrač, chatBufferStr));
+					// chatDodaj(new Poruka(timestamp(), PorukaTip.CHAT_VLASTITI, igrač, chatBufferStr));
 					klijent.chatPošalji(chatBufferStr);
 					chatBuffer = new char[CHAT_BUFFER_MAX];
 					chatBufferPos = 0;

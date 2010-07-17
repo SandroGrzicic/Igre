@@ -82,7 +82,7 @@ public abstract class MrežaSlanje extends Thread {
 
 	/** Šalje izravno određenu akciju, bez ikakvih parametara. */
 	void pošaljiAkciju(final Akcije akcija) throws IOException {
-		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(4);
+		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(1);
 		final DataOutputStream out = new DataOutputStream(outBAOS);
 
 		out.writeByte(akcija.id());
@@ -91,7 +91,7 @@ public abstract class MrežaSlanje extends Thread {
 
 	/** Šalje chat poruku. */
 	public void pošaljiPoruku(final String poruka) throws IOException {
-		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(4);
+		final ByteArrayOutputStream outBAOS = new ByteArrayOutputStream(3 + 3 * poruka.length());
 		final DataOutputStream out = new DataOutputStream(outBAOS);
 
 		out.writeByte(Akcije.CHAT_PORUKA.id());

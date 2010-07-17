@@ -30,7 +30,7 @@ public enum Rezolucija {
 		if ((w != 0) && (h != 0)) {
 			return this.w + "x" + this.h;
 		}
-		return "Ručno definirana";
+		return "Ručno odabrana";
 	}
 
 	public Dimension rezolucija() {

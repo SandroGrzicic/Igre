@@ -1,7 +1,5 @@
 package hr.sandrogrzicic.igre.klijent;
 
-/** udp && ((ip.src_host == ss) && ip.dst_host == sworm.no-ip.com) || ((ip.src_host == sworm.no-ip.com)) */
-/** src host ss and dst host sworm.no-ip.com or src host sworm.no-ip.com */
 import hr.sandrogrzicic.igre.exceptions.NevaljaniPaketException;
 import hr.sandrogrzicic.igre.spheres.klijent.Igrač;
 import hr.sandrogrzicic.igre.spheres.klijent.Postavke;
@@ -17,9 +15,7 @@ import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -29,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractKlijent {
 	public static final int VERZIJA = Server.VERZIJA;
-	public static final int IME_MAX_LENGTH = 32;
 	private static final byte[] CONNECTION_STRING = "Bok!".getBytes();
 	private static final int PAKET_MAX_VELIČINA = 1024;
 	private static final int SOCKET_TIMEOUT = 5000;
@@ -38,8 +33,7 @@ public abstract class AbstractKlijent {
 	protected final Map<Integer, Igrač> igrači;
 	protected double radiusMax;
 	private SocketAddress adresa;
-	private final InetSocketAddress adresaServera;
-	protected final Set<Prikaz> prikazi;
+	private InetSocketAddress adresaServera;
 	protected final EnumMap<Postavke, Object> postavke;
 	protected final UDP udp;
 
@@ -49,19 +43,13 @@ public abstract class AbstractKlijent {
 
 	/**
 	 * Kreira novi Klijent. Stvara i pokreće dretve za slanje i primanje mrežnih podataka te prikaznu dretvu.
-	 * 
-	 * @param hostname
-	 *            adresa servera
-	 * @param port
-	 *            servera
 	 */
-	public AbstractKlijent(final String hostname, final int port) {
-		this.adresaServera = new InetSocketAddress(hostname, port);
+	public AbstractKlijent() {
+		// this.adresaServera = new InetSocketAddress(hostname, port);
 		this.udp = new UDP(PAKET_MAX_VELIČINA);
 		this.igrač = new Igrač();
 		this.igrači = new ConcurrentHashMap<Integer, Igrač>(16, 0.5f, 1);
 		this.postavke = new EnumMap<Postavke, Object>(Postavke.class);
-		this.prikazi = new HashSet<Prikaz>();
 	}
 
 	/** Pokreće klijent. Prikaz i mreža se aktiviraju. */
@@ -85,6 +73,7 @@ public abstract class AbstractKlijent {
 	 */
 	protected void initConnection() throws IOException {
 		// inicijalni socket za spajanje na server (listen port)
+		adresaServera = new InetSocketAddress((String) postavke.get(Postavke.SERVER_HOSTNAME), (Integer) postavke.get(Postavke.SERVER_PORT));
 		udp.otvoriSocket();
 		udp.setTimeout(SOCKET_TIMEOUT);
 		// "Bok!" paket serveru
@@ -118,20 +107,11 @@ public abstract class AbstractKlijent {
 		mrežaPrimanje.setIgraAktivna(novoStanje);
 		mrežaSlanje.setIgraAktivna(novoStanje);
 		igraAktivna = novoStanje;
-		for (final Prikaz p : prikazi) {
-			p.setIgraAktivna(novoStanje);
-		}
+		prikazGlavni.setIgraAktivna(novoStanje);
 	}
 
 	public boolean isIgraAktivna() {
 		return igraAktivna;
-	}
-
-	/** Javlja svim registriranim prikazima da je došlo do promjene postavki. */
-	public void propagirajPromjenuPostavki() {
-		for (final Prikaz p : prikazi) {
-			p.promjenaPostavki();
-		}
 	}
 
 
@@ -145,9 +125,7 @@ public abstract class AbstractKlijent {
 		if (vrijednost == null) {
 			throw new IllegalArgumentException("Postavka ne smije biti null!");
 		}
-
 		postavke.put(postavka, vrijednost);
-		propagirajPromjenuPostavki();
 	}
 
 	void setBodovi(final long bodovi) {
@@ -160,19 +138,6 @@ public abstract class AbstractKlijent {
 		} catch (final IOException io) {
 			izgubljenaVeza();
 		}
-	}
-
-	/**
-	 * Registrira zadani prikaz za primanje događaja.
-	 */
-	public void dodajPrikaz(final Prikaz p) {
-		prikazi.add(p);
-	}
-	/**
-	 * Uklanja zadani prikaz sa popisa primanja događaja.
-	 */
-	public void ukloniPrikaz(final Prikaz p) {
-		prikazi.remove(p);
 	}
 
 	public Map<Integer, Igrač> getIgrači() {

@@ -4,7 +4,6 @@ import hr.sandrogrzicic.igre.klijent.AbstractKlijent;
 import hr.sandrogrzicic.igre.spheres.Akcije;
 import hr.sandrogrzicic.igre.spheres.klijent.mreža.MrežaPrimanje;
 import hr.sandrogrzicic.igre.spheres.klijent.mreža.MrežaSlanjeSpheres;
-import hr.sandrogrzicic.igre.spheres.klijent.prikaz.Prikaz;
 import hr.sandrogrzicic.igre.spheres.klijent.prikaz.PrikazSpheres;
 import hr.sandrogrzicic.igre.spheres.klijent.prikaz.PrikazSpheresJFrame;
 import hr.sandrogrzicic.igre.spheres.objekti.Loptica;
@@ -24,12 +23,15 @@ import java.io.IOException;
  * @author SeriousWorm
  */
 public class Klijent extends AbstractKlijent {
+	public static final String DEFAULT_SERVER_HOSTNAME = "localhost";
+	public static final int DEFAULT_SERVER_PORT = 7710;
+	public static final int IME_MAX_LENGTH = 32;
 	private final Loptica loptica;
 	private final Sfera sfera;
 	private PrikazSpheres prikaz;
 
-	public Klijent(final String hostname, final int port) {
-		super(hostname, port);
+	public Klijent() {
+		super();
 		loptica = new Loptica();
 		sfera = new Sfera();
 		igrač.setSfera(sfera);
@@ -40,12 +42,10 @@ public class Klijent extends AbstractKlijent {
 	protected void pokreni() {
 		// stvara prikaz; svi bitni parametri (npr. ime igrača) su postavljeni nakon ove naredbe.
 		this.prikaz = new PrikazSpheresJFrame(this, igrač);
-		// TODO: ukloniti "glavni" prikaz
-		this.prikazGlavni = prikaz;
-
+		prikazGlavni = prikaz;
 		spojiSeNaServer();
 
-		new Thread(prikazGlavni).start();
+		new Thread(prikaz).start();
 
 		mrežaPrimanje = new MrežaPrimanje(this, udp);
 		mrežaSlanje = new MrežaSlanjeSpheres(this, udp);
@@ -98,31 +98,17 @@ public class Klijent extends AbstractKlijent {
 
 		igrač.getSfera().set(0.5, 0.5, in.readDouble(), false);
 
-		((PrikazSpheres) prikazGlavni).setInit(radiusMax);
+		prikaz.setInit(radiusMax);
 
 	}
-
-
-	/**
-	 * Pokreće klijent sa defaultnim postavkama.
-	 */
-	public static void main(final String[] args) {
-		// final String host = "sworm.no-ip.com";
-		final String host = "192.168.0.7";
-		final int port = 7710;
-		new Klijent(host, port).pokreni();
-	}
-
 
 	@SuppressWarnings("incomplete-switch")
 	@Override
 	public void onPrimljenPaket(final DataInputStream paket) throws IOException {
-		paket.mark(paket.available());
 
-		for (final Prikaz p : prikazi) {
-			p.onPrimljenPaket(paket);
-			paket.reset();
-		}
+		paket.mark(0); // 0 jer je underlying stream ByteArrayInputStream, pa broj nema značenja
+		prikaz.onPrimljenPaket(paket);
+		paket.reset();
 
 		final int id;
 		switch (Akcije.get(paket.readByte())) {
@@ -146,6 +132,13 @@ public class Klijent extends AbstractKlijent {
 
 	public Sfera getSfera() {
 		return sfera;
+	}
+
+	/**
+	 * Pokreće klijent sa defaultnim postavkama.
+	 */
+	public static void main(final String[] args) {
+		new Klijent().pokreni();
 	}
 
 }

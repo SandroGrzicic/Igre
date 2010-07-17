@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 /**
- * Bazna klasa za sve Prikaze.
+ * Bazno sučelje za sve Prikaze.
  * 
  * @author Sandro Gržičić
  */

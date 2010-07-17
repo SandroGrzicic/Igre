@@ -2,6 +2,8 @@ package hr.sandrogrzicic.igre.poruke;
 
 import hr.sandrogrzicic.igre.server.AbstractIgrač;
 
+import java.io.ByteArrayOutputStream;
+
 public abstract class Poruka {
 	protected final AbstractIgrač izvor;
 
@@ -17,8 +19,16 @@ public abstract class Poruka {
 		this.izvor = izvor;
 	}
 
+	/**
+	 * Vraća izvor ove poruke.
+	 */
 	public final AbstractIgrač getIzvor() {
 		return izvor;
 	}
+
+	/**
+	 * Vraća ByteArrayOutputStream koji se može koristiti za konstruiranje paketa pri slanju preko mreže.
+	 */
+	public abstract ByteArrayOutputStream getBAOS();
 
 }
